@@ -17,6 +17,8 @@ function index(req, res) {
 
         const productListToSend = (productList.map(product => {
             return new Promise((resolve, reject) => {
+                if (err) return reject(err);
+
                 connection.query(imagesSql, [product.id], (err, images) => {
                     if (err) return res.status(500).json({ state: 'error', message: err.message });
 
@@ -34,8 +36,6 @@ function index(req, res) {
                 })
             })
         }))
-
-        console.log(productListToSend);
 
         Promise.all(productListToSend)
             .then(productListToSend => {
