@@ -9,10 +9,13 @@ function index(req, res) {
     const limit = Number(req.query.limit) || 5
     const offset = (page - 1) * limit
 
-    const productSql = 'SELECT * FROM products LIMIT ? OFFSET ?'
+    const search = req.query.search || ''
+    const searchTerm = `%${search}%`
+
+    const productSql = 'SELECT * FROM products WHERE products.name LIKE ? OR products.description LIKE ? LIMIT ? OFFSET ?'
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
 
-    connection.query(productSql, [limit, offset], (err, products) => {
+    connection.query(productSql, [searchTerm, searchTerm, limit, offset], (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
         const productList = products
 
