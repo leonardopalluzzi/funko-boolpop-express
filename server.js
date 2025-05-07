@@ -6,6 +6,6 @@ const cors = require('cors')
 app.use(express.json())
 
 app.listen(port, () => {
-    console.log(`server running on http://localhost:${port}`);
+    console.log(`Server running on http://localhost:${port}`);
 
 })
