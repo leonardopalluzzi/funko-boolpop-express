@@ -3,56 +3,39 @@ const connection = require('../db/db')
 
 function index(req, res) {
 
-    const page = Number(req.query.page)
-    const limit = Number(req.query.limit)
+    const page = Number(req.query.page) || 1
+    const limit = Number(req.query.limit) || 5
     const offset = (page - 1) * limit
 
     const productSql = 'SELECT * FROM products LIMIT ? OFFSET ?'
+
+    connection.query(productSql, [limit, offset], (err, products) => {
+        if (err) return res.status(500).json({ state: 'error', message: err.message });
+        const productsList = products
+
+        const productListToSend = productsList.map(product => {
+            return itemToSend = {
+                slug: product.slug,
+                name: product.name,
+                price: product.price,
+                description: product.description,
+                created_at: product.created_at,
+                item_number: product.item_number,
+                quantity: product.quantity,
+            }
+        })
+
+        res.json(productListToSend)
+    })
+}
+
+function show(req, res) {
+
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const transactionsSql = 'SELECT * FROM transactions WHERE transactions.product_id = ?'
     const categorySql = 'SELECT * FROM categories WHERE categories.id = ?'
     const licenseSql = 'SELECT * FROM licenses WHERE licenses.id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
-
-    connection.query(productSql, [limit, offset], (err, product) => {
-        if (err) return res.status(500).json({ state: 'error', message: err.message });
-        const basicProduct = product[0]
-
-        connection.query(imagesSql, [basicProduct.id], (err, images) => {
-            if (err) return res.status(500).json({ state: 'error', message: err.message });
-            basicProduct.images = images
-
-            connection.query(transactionsSql, [basicProduct.id], (err, transactions) => {
-                if (err) return res.status(500).json({ state: 'error', message: err.message });
-                basicProduct.tranactions = transactions
-
-                connection.query(categorySql, [basicProduct.categories_id], (err, category) => {
-                    if (err) return res.status(500).json({ state: 'error', message: err.message });
-                    basicProduct.categories = category[0]
-
-                    connection.query(licenseSql, [basicProduct.licenses_id], (err, license) => {
-                        if (err) return res.status(500).json({ state: 'error', message: err.message });
-                        basicProduct.license = license[0]
-
-                        connection.query(promotionSql, [basicProduct.promotions_id], (err, promotion) => {
-                            if (err) return res.status(500).json({ state: 'error', message: err.message });
-                            basicProduct.promotion = promotion[0]
-
-                            res.json(basicProduct)
-                        })
-                    })
-                })
-            })
-
-
-        })
-
-
-    })
-
-}
-
-function show(req, res) {
 
 }
 
