@@ -3,7 +3,7 @@ const connection = require('../db/db')
 
 function index(req, res) {
 
-    const sql = 'SELECT * FROM poducts'
+    const sql = 'SELECT * FROM products'
 
     connection.query(sql, (err, results) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });

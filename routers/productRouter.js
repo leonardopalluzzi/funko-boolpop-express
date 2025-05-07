@@ -1,29 +1,30 @@
 const express = require('express')
 const router = express.Router()
+const productController = require('../controllers/productController')
 
 // Index
 
-router.get('/',)
+router.get('/', productController.index)
 
 // Show
 
-router.get('/:slug',)
+router.get('/:slug', productController.show)
 
-// Store 
+// Store
 
-router.post('/',)
+router.post('/', productController.store)
 
-// Update 
+// Update
 
-router.put('/:slug')
+router.put('/:slug', productController.update)
 
-// Modify 
+// Modify
 
-router.patch('/:slug')
+router.patch('/:slug', productController.modify)
 
-// Destroy 
+// Destroy
 
-router.delete('/:slug')
+router.delete('/:slug', productController.destroy)
 
 
 module.exports = router;
