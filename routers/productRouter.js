@@ -9,4 +9,21 @@ router.get('/',)
 
 router.get('/:slug',)
 
+// Store 
+
+router.post('/',)
+
+// Update 
+
+router.put('/:slug')
+
+// Modify 
+
+router.patch('/:slug')
+
+// Destroy 
+
+router.delete('/:slug')
+
+
 module.exports = router;
