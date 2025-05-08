@@ -12,7 +12,7 @@ function index(req, res) {
     const search = req.query.search || ''
     const searchTerm = `%${search}%`
 
-    const productSql = 'SELECT products.*, COUNT(transactions.id) AS transaction_count FROM products JOIN transactions ON products.id = transactions.product_id WHERE (products.name LIKE ? OR products.description LIKE ?) GROUP BY products.id HAVING COUNT(transactions.id) >= ? LIMIT 5 OFFSET 0;'
+    const productSql = 'SELECT products.*, COUNT(transactions.id) AS transaction_count FROM products JOIN transactions ON products.id = transactions.product_id WHERE (products.name LIKE ? OR products.description LIKE ?) GROUP BY products.id HAVING COUNT(transactions.id) >= ? LIMIT ? OFFSET ?;'
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
 
