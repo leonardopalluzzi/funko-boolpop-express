@@ -14,6 +14,9 @@ router.get('/:id', productController.show)
 
 router.post('/', productController.store)
 
+//stripe
+router.post('/stripe', productController.store)
+
 // Update
 
 router.put('/:id', productController.update)

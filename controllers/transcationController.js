@@ -11,6 +11,13 @@ function show(req, res) {
 
 function store(req, res) {
 
+    //rotta per creare con stripe l'intent della transazione, salvare nel db l'intent e restituire la secret alla front
+
+}
+
+function stripe(req, res) {
+    // rotta per ricevere il webhook di stripe e l'esito della transazione e aggiornare la righa del db
+
 }
 
 function update(req, res) {
@@ -29,6 +36,7 @@ module.exports = {
     index,
     show,
     store,
+    stripe,
     update,
     modify,
     destroy
