@@ -12,6 +12,14 @@ function index(req, res) {
     const search = req.query.search || ''
     const searchTerm = `%${search}%`
 
+    if (page < 1) {
+        return res.status(403).json({ state: 'error', message: 'Page number not valid' })
+    } else if (limit < 5 || limit > 15) {
+        return res.satus(403).json({ state: 'error', message: 'Limit not valid' })
+    } else if (transaction_min < 0) {
+        return res.status(403).json({ state: 'error', message: 'Min parameter not valid' })
+    }
+
     const productSql = 'SELECT products.*, COUNT(transactions.id) AS transaction_count FROM products JOIN transactions ON products.id = transactions.product_id WHERE (products.name LIKE ? OR products.description LIKE ?) GROUP BY products.id HAVING COUNT(transactions.id) >= ? LIMIT ? OFFSET ?;'
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
