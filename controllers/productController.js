@@ -13,6 +13,7 @@ function index(req, res) {
 
     const productSql = 'SELECT * FROM products WHERE products.name LIKE ? OR products.description LIKE ? LIMIT ? OFFSET ?'
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
+    const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
 
     connection.query(productSql, [searchTerm, searchTerm, limit, offset], (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
@@ -25,17 +26,23 @@ function index(req, res) {
                 connection.query(imagesSql, [product.id], (err, images) => {
                     if (err) return res.status(500).json({ state: 'error', message: err.message });
 
-                    const itemToSend = {
-                        slug: product.slug,
-                        name: product.name,
-                        price: product.price,
-                        description: product.description,
-                        created_at: product.created_at,
-                        item_number: product.item_number,
-                        quantity: product.quantity,
-                        images: images
-                    }
-                    resolve(itemToSend)
+                    connection.query(promotionSql, [product.promotions_id], (err, promotions) => {
+                        if (err) return res.status(500).json({ state: 'error', message: err.message });
+
+                        const itemToSend = {
+                            slug: product.slug,
+                            name: product.name,
+                            price: product.price,
+                            description: product.description,
+                            created_at: product.created_at,
+                            item_number: product.item_number,
+                            quantity: product.quantity,
+                            images: images,
+                            promotions: promotions
+                        }
+
+                        resolve(itemToSend)
+                    })
                 })
             })
         }))
