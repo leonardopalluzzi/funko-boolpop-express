@@ -1,5 +1,4 @@
 const connection = require('../db/db')
-const { connect } = require('../routers/productRouter')
 
 
 function index(req, res) {
