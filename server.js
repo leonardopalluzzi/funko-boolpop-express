@@ -4,9 +4,12 @@ const port = process.env.PORT;
 const cors = require('cors');
 const productRouter = require('./routers/productRouter');
 
-app.use(cors({
-    origin: 'http://localhost:5173'
-}))
+//middleware per cors
+app.use(cors(
+    {
+        origin: process.env.FRONT_URL
+    }
+));
 
 app.use(express.json())
 
