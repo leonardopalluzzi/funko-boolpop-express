@@ -7,14 +7,15 @@ function index(req, res) {
     const page = Number(req.query.page) || 1
     const limit = Number(req.query.limit) || 5
     const offset = (page - 1) * limit
+    const transaction_min = Number(req.query.trans) || 0
 
     const search = req.query.search || ''
     const searchTerm = `%${search}%`
 
-    const productSql = 'SELECT * FROM products WHERE products.name LIKE ? OR products.description LIKE ? LIMIT ? OFFSET ?'
+    const productSql = 'SELECT products.*, COUNT(transactions.id) AS transaction_count FROM products JOIN transactions ON products.id = transactions.product_id WHERE (products.name LIKE ? OR products.description LIKE ?) GROUP BY products.id HAVING COUNT(transactions.id) >= ? LIMIT 5 OFFSET 0;'
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
 
-    connection.query(productSql, [searchTerm, searchTerm, limit, offset], (err, products) => {
+    connection.query(productSql, [searchTerm, searchTerm, transaction_min, limit, offset], (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
         const productList = products
 
@@ -33,7 +34,9 @@ function index(req, res) {
                         created_at: product.created_at,
                         item_number: product.item_number,
                         quantity: product.quantity,
+                        transaction_count: product.transaction_count,
                         images: images
+
                     }
                     resolve(itemToSend)
                 })
