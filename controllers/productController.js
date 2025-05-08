@@ -58,7 +58,7 @@ function show(req, res) {
     const categorySql = 'SELECT * FROM categories WHERE categories.id = ?'
     const licenseSql = 'SELECT * FROM licenses WHERE licenses.id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
-    const attirbuteSql = 'SELECT * FROM attributes JOIN product_attribute ON attributes.id = product_attribute.attributes_id WHERE product_attribute.products_id = ?'
+    const attributeSql = 'SELECT * FROM attributes JOIN product_attribute ON attributes.id = product_attribute.attributes_id WHERE product_attribute.products_id = ?'
 
     connection.query(productSql, [slug], (err, product) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
@@ -104,7 +104,7 @@ function show(req, res) {
                             if (err) return res.status(500).json({ state: 'error', message: err.message });
                             productToSend.promotion = promotion
 
-                            connection.query(attirbuteSql, [pId], (err, attributes) => {
+                            connection.query(attributeSql, [pId], (err, attributes) => {
                                 if (err) return res.status(500).json({ state: 'error', message: err.message });
                                 productToSend.attributes = attributes
 
