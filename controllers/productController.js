@@ -11,9 +11,10 @@ function index(req, res) {
     const search = req.query.search || ''
     const searchTerm = `%${search}%`
 
-    const productSql = 'SELECT * FROM products WHERE products.name LIKE ? OR products.description LIKE ? LIMIT ? OFFSET ?'
+    const productSql = 'SELECT * FROM products COUNT(transactions.id) AS tra WHERE products.name LIKE ? OR products.description LIKE ? LIMIT ? OFFSET ?'
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
-
+    /*     const mostSoldSql = 'SELECT product_id, COUNT(*) FROM transactions GROUP BY product_id HAVING COUNT(*) >= 2'
+     */
     connection.query(productSql, [searchTerm, searchTerm, limit, offset], (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
         const productList = products
@@ -51,6 +52,7 @@ function index(req, res) {
 function show(req, res) {
 
     const slug = req.params.slug
+
 
     const productSql = 'SELECT * FROM products WHERE products.slug = ?'
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
