@@ -28,15 +28,36 @@ function store(req, res) {
     const currentDate = getCurrentMySQLDateTime()
     req.body.created_at = currentDate
 
+
+
+    //creo payment intent
+    const paymentIntent = stripe.paymentIntents.create({
+        amount: Math.round(amount * 100),
+        currency: 'eur',
+        metadata: {
+            transaction_id: transactionId,
+            email: useremail
+        },
+    })
+
+    req.body.stripe_payment_id = paymentIntent.id
+
+
     const { products_info, username, useremail, amount, status, stripe_payment_id, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap } = req.body
 
     const values = [username, useremail, amount, status, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap]
 
 
-    const saveIntentSql = `INSERT INTO transactions (username, useremail, amount, status, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    const saveIntentSql = `INSERT INTO transactions (username, useremail, amount, status, created_at, user_last_name, stripe_payment_id, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     const recoverProdIdSql = 'SELECT products.id FROM products WHERE products.slug = ?'
     const updatePivotSql = 'INSERT INTO product_transaction (product_id, transaction_id, quantity) VALUES (?, ?, ?)'
+
+
+
+
+
+
 
     connection.query(saveIntentSql, values, (err, results) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
@@ -68,17 +89,6 @@ function store(req, res) {
                         if (err) return res.status(500).json({ state: 'error', message: err.message });
                         console.log(results);
                     })
-                })
-            })
-            .then(() => {
-                //creo payment intent
-                return stripe.paymentIntents.create({
-                    amount: Math.round(amount * 100),
-                    currency: 'eur',
-                    metadata: {
-                        transaction_id: transactionId,
-                        email: useremail
-                    },
                 })
             })
             .then(paymentIntent => {
