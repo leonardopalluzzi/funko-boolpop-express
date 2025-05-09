@@ -3,6 +3,7 @@ const connection = require('../db/db')
 
 function index(req, res) {
 
+    const dateSort = req.query.date
     const trans = Number(req.query.trans) || 0
     const page = Number(req.query.page) || 1
     const limit = Number(req.query.limit) || 5
@@ -23,12 +24,10 @@ function index(req, res) {
                         AND c.name LIKE ?
                         GROUP BY p.id
                         HAVING total_quantity_sold >= ?
-                        ORDER BY p.created_at DESC
-                        LIMIT ? OFFSET ?;
-                        `
+                        ${dateSort ? 'ORDER BY p.created_at DESC' : ''}
+                        LIMIT ? OFFSET ?;`
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
-
 
     const queryParams = [searchName, searchDescription, searchCategory, trans, limit, offset]
 
