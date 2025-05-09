@@ -7,7 +7,6 @@ function index(req, res) {
     const page = Number(req.query.page) || 1
     const limit = Number(req.query.limit) || 5
     const offset = (page - 1) * limit
-    const transaction_min = Number(req.query.trans) || 0
 
     const name = req.query.name || ''
     const description = req.query.description || ''
@@ -27,7 +26,7 @@ function index(req, res) {
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
 
-    const queryParams = [searchName, searchDescription, searchCategory, transaction_min, limit, offset]
+    const queryParams = [searchName, searchDescription, searchCategory, limit, offset]
 
     connection.query(productSql, queryParams, (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
