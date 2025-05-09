@@ -55,6 +55,7 @@ function index(req, res) {
                             price: product.price,
                             description: product.description,
                             created_at: product.created_at,
+                            banner: product.banner,
                             item_number: product.item_number,
                             quantity: product.quantity,
                             transaction_count: product.transaction_count,
