@@ -1,5 +1,5 @@
 const connection = require('../db/db')
-const stripe = require('stripe')('sk_test_...');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_API_KEY);
 
 
 function index(req, res) {
@@ -26,70 +26,66 @@ function store(req, res) {
     }
 
     const currentDate = getCurrentMySQLDateTime()
-
     req.body.created_at = currentDate
-
-    console.log(req.body);
 
     const { products_info, username, useremail, amount, status, stripe_payment_id, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap } = req.body
 
-    //rotta per creare con stripe l'intent della transazione, salvare nel db l'intent e restituire la secret alla front
-    // salvo in db il payment intent
+    const values = [username, useremail, amount, status, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap]
+
+
     const saveIntentSql = `INSERT INTO transactions (username, useremail, amount, status, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-
     const recoverProdIdSql = 'SELECT products.id FROM products WHERE products.slug = ?'
-
     const updatePivotSql = 'INSERT INTO product_transaction (product_id, transaction_id, quantity) VALUES (?, ?, ?)'
-
-    const values = [username, useremail, amount, status, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap]
 
     connection.query(saveIntentSql, values, (err, results) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
-
         const transactionId = results.insertId
+
+        //recupero i product id dallo slug
         const prodIds = products_info.map(item => {
             return new Promise((resolve, reject) => {
-                if (err) return reject(err)
                 connection.query(recoverProdIdSql, [item.item_slug], (err, prodId) => {
-                    if (err) return res.status(500).json({ state: 'error', message: err.message });
-                    const prod = {
-                        product_id: prodId[0],
-                        product_quantity: item.item_quantity
-                    }
-                    resolve(prod)
+                    if (err) return reject(err);
+                    if (!prodId.length) return reject(new Error(`Prodotto non trovato: ${item.item_slug}`));
+                    resolve(
+                        {
+                            product_id: prodId[0],
+                            product_quantity: item.item_quantity
+                        }
+                    )
                 })
             })
         })
 
         //aggiornare pivot
         Promise.all(prodIds)
-            .then(prodIds => {
+            .then(products => {
 
-                console.log(prodIds);
-                prodIds.forEach(item => {
+                console.log(products);
+                products.forEach(item => {
                     connection.query(updatePivotSql, [item.product_id.id, transactionId, item.product_quantity], (err, results) => {
                         if (err) return res.status(500).json({ state: 'error', message: err.message });
                         console.log(results);
                     })
                 })
             })
+            .then(() => {
+                //creo payment intent
+                return stripe.paymentIntents.create({
+                    amount: Math.round(amount * 100),
+                    currency: 'eur',
+                    metadata: {
+                        transaction_id: transactionId,
+                        email: useremail
+                    },
+                })
+            })
+            .then(paymentIntent => {
+                res.json({ clientSecret: paymentIntent.client_secret })
+            })
+            .catch(err => res.status(500).json({ state: 'error', message: err.message }))
     })
-
-    //recupero e definisco i dati necessari alla transaction intent
-    const metadata = {
-        promotion: req.body.cupon || '',
-    }
-
-    const currency = 'eur'
-
-    //creo payment intent
-    const paymentIntent = stripe.paymentIntent.create({
-        amount,
-        currency,
-        metadata,
-    })
-
 }
 
 function payment(req, res) {
