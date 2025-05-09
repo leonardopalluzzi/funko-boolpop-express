@@ -3,7 +3,7 @@ const connection = require('../db/db')
 
 function index(req, res) {
 
-
+    const trans = Number(req.query.trans) || 0
     const page = Number(req.query.page) || 1
     const limit = Number(req.query.limit) || 5
     const offset = (page - 1) * limit
@@ -15,18 +15,22 @@ function index(req, res) {
     const searchDescription = `%${description}%`
     const searchCategory = `%${category}%`
 
-    const productSql = `SELECT products.*  
-    FROM products 
-    JOIN categories ON products.categories_id = categories.id 
-    WHERE (products.name LIKE ? OR products.description LIKE ?)
-    AND categories.name LIKE ?
-    GROUP BY products.id 
-    ORDER BY created_at DESC 
-    LIMIT ? OFFSET ?;`
+    const productSql = `SELECT p.*, SUM(pt.quantity) AS total_quantity_sold
+                        FROM products p
+                        JOIN categories c ON p.categories_id = c.id
+                        LEFT JOIN product_transaction pt ON pt.product_id = p.id
+                        WHERE (p.name LIKE ? OR p.description LIKE ?)
+                        AND c.name LIKE ?
+                        GROUP BY p.id
+                        HAVING total_quantity_sold >= ?
+                        ORDER BY p.created_at DESC
+                        LIMIT ? OFFSET ?;
+                        `
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
 
-    const queryParams = [searchName, searchDescription, searchCategory, limit, offset]
+
+    const queryParams = [searchName, searchDescription, searchCategory, trans, limit, offset]
 
     connection.query(productSql, queryParams, (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
