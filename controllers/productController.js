@@ -7,20 +7,34 @@ function index(req, res) {
     const page = Number(req.query.page) || 1
     const limit = Number(req.query.limit) || 5
     const offset = (page - 1) * limit
-    const transaction_min = Number(req.query.trans) || 0
 
-    const search = req.query.search || ''
-    const searchTerm = `%${search}%`
+    const name = req.query.name || ''
+    const description = req.query.description || ''
+    const category = req.query.category || ''
+    const searchName = `%${name}%`
+    const searchDescription = `%${description}%`
+    const searchCategory = `%${category}%`
 
-    const productSql = 'SELECT products.* FROM products WHERE (products.name LIKE ? OR products.description LIKE ?) LIMIT ? OFFSET ?;'
+    const productSql = `SELECT products.*  
+    FROM products 
+    JOIN categories ON products.categories_id = categories.id 
+    WHERE (products.name LIKE ? OR products.description LIKE ?)
+    AND categories.name LIKE ?
+    GROUP BY products.id 
+    ORDER BY created_at DESC 
+    LIMIT ? OFFSET ?;`
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
 
-    connection.query(productSql, [searchTerm, searchTerm, limit, offset], (err, products) => {
+    const queryParams = [searchName, searchDescription, searchCategory, limit, offset]
+
+    connection.query(productSql, queryParams, (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
 
 
         const productList = products
+
+
 
         const productListToSend = (productList.map(product => {
             return new Promise((resolve, reject) => {
