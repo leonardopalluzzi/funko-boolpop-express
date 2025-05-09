@@ -80,6 +80,18 @@ function store(req, res) {
                         email: useremail
                     },
                 })
+
+            })
+            //aggiorno i campi della transazione
+            .then(paymentIntent => {
+
+                const updateSql = 'UPDATE transactions SET stripe_payment_id = ?, status = ? WHERE transactions.id = ?'
+                const values = [paymentIntent.id, paymentIntent.status, transactionId]
+                connection.query(updateSql, values, (err, results) => {
+                    if (err) return res.status(500).json({ state: 'error', message: err.message });
+                    console.log(results);
+                })
+                return paymentIntent
             })
             .then(paymentIntent => {
                 res.json({ clientSecret: paymentIntent.client_secret })
