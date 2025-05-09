@@ -94,7 +94,6 @@ function store(req, res) {
                 return paymentIntent
             })
             .then(paymentIntent => {
-                console.log(paymentIntent);
                 res.json({ clientSecret: paymentIntent.client_secret })
             })
             .catch(err => res.status(500).json({ state: 'error', message: err.message }))
