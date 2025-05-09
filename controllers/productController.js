@@ -16,14 +16,13 @@ function index(req, res) {
     const searchDescription = `%${description}%`
     const searchCategory = `%${category}%`
 
-    const productSql = `SELECT products.*, COUNT(transactions.id) AS transaction_count 
+    const productSql = `SELECT products.*  
     FROM products 
-    JOIN transactions ON products.id = transactions.product_id
     JOIN categories ON products.categories_id = categories.id 
     WHERE (products.name LIKE ? OR products.description LIKE ?)
-    AND categories.name LIKE ? 
+    AND categories.name LIKE ?
     GROUP BY products.id 
-    HAVING COUNT(transactions.id) >= ? 
+    ORDER BY created_at DESC 
     LIMIT ? OFFSET ?;`
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
