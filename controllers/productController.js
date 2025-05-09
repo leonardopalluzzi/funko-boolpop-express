@@ -9,16 +9,21 @@ function index(req, res) {
     const offset = (page - 1) * limit
     const transaction_min = Number(req.query.trans) || 0
 
-    const search = req.query.search || ''
-    const searchTerm = `%${search}%`
+    const name = req.query.name || ''
+    const description = req.query.description || ''
+    const searchName = `%${name}%`
+    const searchDescription = `%${description}%`
 
     const productSql = 'SELECT products.*, COUNT(transactions.id) AS transaction_count FROM products JOIN transactions ON products.id = transactions.product_id WHERE (products.name LIKE ? OR products.description LIKE ?) GROUP BY products.id HAVING COUNT(transactions.id) >= ? LIMIT ? OFFSET ?;'
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
+    const categoriesSql = 'SELECT * FROM products JOIN categories ON products.categories_id = categories.id;'
 
-    connection.query(productSql, [searchTerm, searchTerm, transaction_min, limit, offset], (err, products) => {
+    connection.query(productSql, [searchName, searchDescription, transaction_min, limit, offset], (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
         const productList = products
+
+
 
         const productListToSend = (productList.map(product => {
             return new Promise((resolve, reject) => {
