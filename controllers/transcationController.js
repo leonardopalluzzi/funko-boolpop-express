@@ -10,6 +10,7 @@ function show(req, res) {
 }
 
 function store(req, res) {
+    console.log(req.body);
 
     //rotta per creare con stripe l'intent della transazione, salvare nel db l'intent e restituire la secret alla front
 

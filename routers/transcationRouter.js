@@ -1,33 +1,33 @@
 const express = require('express')
 const router = express.Router()
-const productController = require('../controllers/productController')
+const transactionController = require('../controllers/transcationController')
 
 // Index
 
-router.get('/', productController.index)
+router.get('/', transactionController.index)
 
 // Show
 
-router.get('/:id', productController.show)
+router.get('/:id', transactionController.show)
 
 // Store
 
-router.post('/', productController.store)
+router.post('/', transactionController.store)
 
 //stripe
-router.post('/stripe', productController.store)
+router.post('/stripe', transactionController.stripe)
 
 // Update
 
-router.put('/:id', productController.update)
+router.put('/:id', transactionController.update)
 
 // Modify
 
-router.patch('/:id', productController.modify)
+router.patch('/:id', transactionController.modify)
 
 // Destroy
 
-router.delete('/:id', productController.destroy)
+router.delete('/:id', transactionController.destroy)
 
 
 module.exports = router;
