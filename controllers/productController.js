@@ -11,15 +11,26 @@ function index(req, res) {
 
     const name = req.query.name || ''
     const description = req.query.description || ''
+    const category = req.query.category || ''
     const searchName = `%${name}%`
     const searchDescription = `%${description}%`
+    const searchCategory = `%${category}%`
 
-    const productSql = 'SELECT products.*, COUNT(transactions.id) AS transaction_count FROM products JOIN transactions ON products.id = transactions.product_id WHERE (products.name LIKE ? OR products.description LIKE ?) GROUP BY products.id HAVING COUNT(transactions.id) >= ? LIMIT ? OFFSET ?;'
+    const productSql = `SELECT products.*, COUNT(transactions.id) AS transaction_count 
+    FROM products 
+    JOIN transactions ON products.id = transactions.product_id
+    JOIN categories ON products.categories_id = categories.id 
+    WHERE (products.name LIKE ? OR products.description LIKE ?)
+    AND categories.name LIKE ? 
+    GROUP BY products.id 
+    HAVING COUNT(transactions.id) >= ? 
+    LIMIT ? OFFSET ?;`
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
-    const categoriesSql = 'SELECT * FROM products JOIN categories ON products.categories_id = categories.id;'
 
-    connection.query(productSql, [searchName, searchDescription, transaction_min, limit, offset], (err, products) => {
+    const queryParams = [searchName, searchDescription, searchCategory, transaction_min, limit, offset]
+
+    connection.query(productSql, queryParams, (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
         const productList = products
 
