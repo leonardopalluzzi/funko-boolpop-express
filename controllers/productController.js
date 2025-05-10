@@ -2,6 +2,7 @@ const connection = require('../db/db')
 
 
 function index(req, res) {
+    console.log(req.query)
 
     const dateSort = req.query.date
     const trans = Number(req.query.trans) || 0
@@ -15,6 +16,8 @@ function index(req, res) {
     const searchName = `%${name}%`
     const searchDescription = `%${description}%`
     const searchCategory = `%${category}%`
+    console.log(searchName);
+
 
     const productSql = `SELECT p.*, SUM(pt.quantity) AS total_quantity_sold
                         FROM products p
@@ -34,6 +37,7 @@ function index(req, res) {
     connection.query(productSql, queryParams, (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
 
+        console.log(products);
 
         const productList = products
 
