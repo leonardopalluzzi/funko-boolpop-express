@@ -108,6 +108,7 @@ function payment(req, res) {
 
     let event
 
+
     try {
         event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
     } catch (err) {
@@ -116,14 +117,19 @@ function payment(req, res) {
     }
 
     if (event.type === 'payment_intent.succeeded') {
+        console.log(event);
+
         const paymentIntent = event.data.object;
         //aggiornare db
-        console.log('pagamento riuscito:', paymentIntent.id)
+        const updateDbSql = 'UPDATE transactions SET status = ? WHERE transactions.stripe_payment_id = ?'
+
+        connection.query(updateDbSql, ['succeeded', paymentIntent.id], (err, results) => {
+            if (err) return res.satatus(500).json({ state: 'error', message: err.message });
+            console.log(results);
+            res.status(200).json(results)
+
+        })
     }
-
-    res.json({ received: true })
-
-
 }
 
 function update(req, res) {
