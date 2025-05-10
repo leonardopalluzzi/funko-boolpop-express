@@ -19,22 +19,44 @@ function index(req, res) {
     console.log(searchName);
 
 
-    const productSql = `SELECT p.*, SUM(pt.quantity) AS total_quantity_sold
-                        FROM products p
-                        JOIN categories c ON p.categories_id = c.id
-                        LEFT JOIN product_transaction pt ON pt.product_id = p.id
-                        WHERE (p.name LIKE ? OR p.description LIKE ?)
-                        AND c.name LIKE ?
-                        GROUP BY p.id
-                        HAVING total_quantity_sold >= ?
-                        ${dateSort ? 'ORDER BY p.created_at DESC' : ''}
-                        LIMIT ? OFFSET ?;`
+    let filters = [];
+    let values = [];
+
+    if (name) {
+        filters.push('p.name LIKE ?');
+        values.push(`%${name}%`);
+    }
+    if (description) {
+        filters.push('p.description LIKE ?');
+        values.push(`%${description}%`);
+    }
+    if (category) {
+        filters.push('c.name LIKE ?');
+        values.push(`%${category}%`);
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+
+    const productSql = `
+  SELECT p.*, COALESCE(SUM(pt.quantity), 0) AS total_quantity_sold
+  FROM products p
+  JOIN categories c ON p.categories_id = c.id
+  LEFT JOIN product_transaction pt ON pt.product_id = p.id
+  ${whereClause}
+  GROUP BY p.id
+  HAVING total_quantity_sold >= ?
+  ${dateSort ? 'ORDER BY p.created_at DESC' : ''}
+  LIMIT ? OFFSET ?
+`;
+
+    values.push(trans, limit, offset);
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
 
-    const queryParams = [searchName, searchDescription, searchCategory, trans, limit, offset]
+    // const queryParams = [searchName, searchDescription, searchCategory, trans, limit, offset]
+    values.push(trans, limit, offset);
 
-    connection.query(productSql, queryParams, (err, products) => {
+    connection.query(productSql, values, (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
 
         console.log(products);
