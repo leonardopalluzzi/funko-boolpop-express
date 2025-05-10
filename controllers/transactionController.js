@@ -116,6 +116,8 @@ function payment(req, res) {
     }
 
     if (event.type === 'payment_intent.succeeded') {
+        const paymentIntent = event.data.object;
+        //aggiornare db
         console.log('pagamento riuscito:', paymentIntent.id)
     }
 
