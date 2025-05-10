@@ -15,7 +15,7 @@ router.get('/:id', transactionController.show)
 router.post('/', transactionController.store)
 
 //stripe
-router.post('/stripe', transactionController.payment)
+router.post('/stripe', express.raw({ type: 'application/json' }), transactionController.payment)
 
 // Update
 

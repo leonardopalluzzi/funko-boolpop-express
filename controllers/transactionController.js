@@ -1,5 +1,6 @@
 const connection = require('../db/db')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_API_KEY);
+const endpointSecret = process.env.WEB_HOOK_SECRET;
 
 
 function index(req, res) {
@@ -102,6 +103,24 @@ function store(req, res) {
 
 function payment(req, res) {
     // rotta per ricevere il webhook di stripe e l'esito della transazione e aggiornare la righa del db
+
+    const sig = req.headers['stripe-signature']
+
+    let event
+
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret)
+    } catch (err) {
+        console.error(`webhook error: ${err.message}`)
+        return res.status(400).json({ state: 'error', message: err.message })
+    }
+
+    if (event.type === 'payment_intent.succeeded') {
+        console.log('pagamento riuscito:', paymentIntent.id)
+    }
+
+    res.json({ received: true })
+
 
 }
 

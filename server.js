@@ -13,7 +13,15 @@ app.use(cors(
     }
 ));
 
-app.use(express.json())
+app.use((req, res, next) => {
+    if (req.originalUrl === '/api/v1/transactions/stripe') {
+        next(); // salta express.json()
+    } else {
+        express.json()(req, res, next);
+    }
+});
+
+// app.use(express.json())
 
 app.use(express.static('./public'))
 
