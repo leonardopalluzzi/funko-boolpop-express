@@ -122,6 +122,7 @@ function payment(req, res) {
         const paymentIntent = event.data.object;
         //aggiornare db
         const updateDbSql = 'UPDATE transactions SET status = ? WHERE transactions.stripe_payment_id = ?'
+        //diminuire di 1 la quiantita disponibile in db
 
         connection.query(updateDbSql, ['succeeded', paymentIntent.id], (err, results) => {
             if (err) return res.satatus(500).json({ state: 'error', message: err.message });
