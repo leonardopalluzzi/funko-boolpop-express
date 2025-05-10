@@ -2,34 +2,30 @@ const connection = require('../db/db')
 
 
 function index(req, res) {
-    console.log(req.query)
+    const dateSort = req.query.date;
+    const sortBySales = req.query.sales;
+    const trans = Number(req.query.trans) || 0;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
+    const offset = (page - 1) * limit;
 
-    const dateSort = req.query.date
-    const trans = Number(req.query.trans) || 0
-    const page = Number(req.query.page) || 1
-    const limit = Number(req.query.limit) || 5
-    const offset = (page - 1) * limit
+    const name = req.query.name || '';
+    const description = req.query.description || '';
+    const category = req.query.category || '';
 
-    const name = req.query.name || ''
-    const description = req.query.description || ''
-    const category = req.query.category || ''
-    const searchName = `%${name}%`
-    const searchDescription = `%${description}%`
-    const searchCategory = `%${category}%`
-    console.log(searchName);
-
-
-    let filters = [];
-    let values = [];
+    const filters = [];
+    const values = [];
 
     if (name) {
         filters.push('p.name LIKE ?');
         values.push(`%${name}%`);
     }
+
     if (description) {
         filters.push('p.description LIKE ?');
         values.push(`%${description}%`);
     }
+
     if (category) {
         filters.push('c.name LIKE ?');
         values.push(`%${category}%`);
@@ -37,17 +33,26 @@ function index(req, res) {
 
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
+    const orderClause =
+        sortBySales
+            ? 'ORDER BY total_quantity_sold DESC'
+            : dateSort
+                ? 'ORDER BY p.created_at DESC'
+                : '';
+
     const productSql = `
-  SELECT p.*, COALESCE(SUM(pt.quantity), 0) AS total_quantity_sold
-  FROM products p
-  JOIN categories c ON p.categories_id = c.id
-  LEFT JOIN product_transaction pt ON pt.product_id = p.id
-  ${whereClause}
-  GROUP BY p.id
-  HAVING total_quantity_sold >= ?
-  ${dateSort ? 'ORDER BY p.created_at DESC' : ''}
-  LIMIT ? OFFSET ?
-`;
+        SELECT 
+            p.*, 
+            COALESCE(SUM(pt.quantity), 0) AS total_quantity_sold
+        FROM products p
+        JOIN categories c ON p.categories_id = c.id
+        LEFT JOIN product_transaction pt ON pt.product_id = p.id
+        ${whereClause}
+        GROUP BY p.id
+        HAVING total_quantity_sold >= ?
+        ${orderClause}
+        LIMIT ? OFFSET ?
+    `;
 
     values.push(trans, limit, offset);
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
