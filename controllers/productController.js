@@ -108,6 +108,19 @@ function index(req, res) {
                 if (searchOnly && !hasFilters) {
                     return res.json([]); // oppure res.status(204).send(); se vuoi nessun contenuto
                 }
+
+                const getCategory = req.query.getCategory === 'true';
+
+                if (getCategory) {
+                    const getCategorySql = 'SELECT categories.name FROM categories '
+                    connection.query(getCategorySql, (err, results) => {
+                        if (err) return res.status(500).json({ state: 'error', message: err.message })
+                        return res.json(results)
+                    })
+
+                    return res.json([]); // oppure res.status(204).send(); se vuoi nessun contenuto
+                }
+
                 res.json(productListToSend)
             })
             .catch(err => res.status(500).json({ state: 'error', message: err.message }))
