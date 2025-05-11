@@ -15,6 +15,7 @@ function store(req, res) {
 
     const cart = req.body.cart
 
+
     //calcolo amount
     let total = 0;
 
