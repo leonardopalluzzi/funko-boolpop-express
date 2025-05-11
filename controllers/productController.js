@@ -11,7 +11,7 @@ function index(req, res) {
 
     const name = req.query.name || '';
     const description = req.query.description || '';
-    const category = req.query.category || '';
+    const category = req.query.category || null;
 
     const filters = [];
     const values = [];
@@ -112,6 +112,8 @@ function index(req, res) {
                 const getCategory = req.query.getCategory === 'true';
 
                 if (getCategory) {
+                    console.log(category);
+
                     const getCategorySql = 'SELECT categories.name FROM categories';
 
                     connection.query(getCategorySql, (err, results) => {
