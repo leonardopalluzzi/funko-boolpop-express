@@ -22,11 +22,15 @@ function index(req, res) {
     }
 
     if (description) {
+        console.log(description);
+
         filters.push('p.description LIKE ?');
         values.push(`%${description}%`);
     }
 
     if (category) {
+        console.log(category);
+
         filters.push('c.name LIKE ?');
         values.push(`%${category}%`);
     }
@@ -63,8 +67,6 @@ function index(req, res) {
 
     connection.query(productSql, values, (err, products) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
-
-        console.log(products);
 
         const productList = products
 
@@ -112,7 +114,6 @@ function index(req, res) {
                 const getCategory = req.query.getCategory === 'true';
 
                 if (getCategory) {
-                    console.log(category);
 
                     const getCategorySql = 'SELECT categories.name FROM categories';
 
