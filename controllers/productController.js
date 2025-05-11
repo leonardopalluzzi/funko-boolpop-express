@@ -102,6 +102,12 @@ function index(req, res) {
 
         Promise.all(productListToSend)
             .then(productListToSend => {
+                const searchOnly = req.query.searchOnly === 'true';
+                const hasFilters = name || description || category;
+
+                if (searchOnly && !hasFilters) {
+                    return res.json([]); // oppure res.status(204).send(); se vuoi nessun contenuto
+                }
                 res.json(productListToSend)
             })
             .catch(err => res.status(500).json({ state: 'error', message: err.message }))
