@@ -112,13 +112,18 @@ function index(req, res) {
                 const getCategory = req.query.getCategory === 'true';
 
                 if (getCategory) {
-                    const getCategorySql = 'SELECT categories.name FROM categories '
-                    connection.query(getCategorySql, (err, results) => {
-                        if (err) return res.status(500).json({ state: 'error', message: err.message })
-                        return res.json(results)
-                    })
+                    const getCategorySql = 'SELECT categories.name FROM categories'
 
-                    return res.json([]); // oppure res.status(204).send(); se vuoi nessun contenuto
+                    const categories = []
+                    connection.query(getCategorySql, (err, results) => {
+                        console.log(err);
+
+                        if (err) return res.status(500).json({ state: 'error', message: err.message })
+                        categories.push(...results)
+                        console.log(categories);
+
+                    })
+                    return res.json(categories)
                 }
 
                 res.json(productListToSend)
