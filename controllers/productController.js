@@ -12,6 +12,9 @@ function index(req, res) {
     const description = req.query.description || '';
     const category = req.query.category || null;
     const attribute = req.query.attribute || '';
+    const minPrice = req.query.minprice || null;
+    const maxPrice = req.query.maxPrice || null;
+
 
     const filters = [];
     const values = [];
@@ -39,7 +42,19 @@ function index(req, res) {
         console.log(attribute);
 
         filters.push('a.name LIKE ?')
-        values.push(`%${attribute}`)
+        values.push(`%${attribute}%`)
+    }
+
+    if (minPrice) {
+        console.log(minPrice);
+
+        filters.push('p.price => ?')
+        values.push(`%${price}%`)
+    }
+
+    if (maxPrice) {
+        filters.push('p.price <= ?');
+        values.push(maxPrice);
     }
 
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
@@ -90,10 +105,7 @@ function index(req, res) {
     values.push(trans, limit, offset);
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
-    const attributeSql = `SELECT *
-                          FROM product_attribute AS pa
-                          JOIN products p ON pa.products_id = p.id
-                          JOIN attributes a ON pa.attributes_id = a.id;`
+    const licenseSql = 'SELECT * FROM licenses WHERE licenses.id = ?'
 
     // const queryParams = [searchName, searchDescription, searchCategory, trans, limit, offset]
     // values.push(trans, limit, offset);
@@ -118,22 +130,27 @@ function index(req, res) {
                         if (err) return res.status(500).json({ state: 'error', message: err.message });
                         connection.query(promotionSql, [product.promotions_id], (err, promotions) => {
                             if (err) return res.status(500).json({ state: 'error', message: err.message });
+                            connection.query(licenseSql, [product.licenses_id], (err, licenses) => {
+                                if (err) return res.status(500).json({ state: 'error', message: err.message });
 
-                            const itemToSend = {
-                                slug: product.slug,
-                                name: product.name,
-                                price: product.price,
-                                description: product.description,
-                                created_at: product.created_at,
-                                banner: product.banner,
-                                item_number: product.item_number,
-                                quantity: product.quantity,
-                                transaction_count: product.transaction_count,
-                                images: images,
-                                promotions: promotions
-                            }
+                                const itemToSend = {
+                                    slug: product.slug,
+                                    name: product.name,
+                                    price: product.price,
+                                    description: product.description,
+                                    created_at: product.created_at,
+                                    banner: product.banner,
+                                    item_number: product.item_number,
+                                    quantity: product.quantity,
+                                    transaction_count: product.transaction_count,
+                                    images: images,
+                                    promotions: promotions,
+                                    license: licenses
 
-                            resolve(itemToSend)
+                                }
+
+                                resolve(itemToSend)
+                            })
                         })
                     })
                 })
