@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const productController = require('../controllers/productController')
+const error_404 = require('../middlewares/NotFound')
 
 // Index
 
@@ -8,7 +9,7 @@ router.get('/', productController.index)
 
 // Show
 
-router.get('/:slug', productController.show)
+router.get('/:slug', error_404, productController.show)
 
 // Store
 

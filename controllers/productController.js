@@ -1,4 +1,5 @@
-const connection = require('../db/db')
+const connection = require('../db/db');
+const error_404 = require('../middlewares/NotFound');
 
 
 function index(req, res) {
@@ -179,6 +180,11 @@ function show(req, res) {
 
     connection.query(productSql, [slug], (err, product) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
+
+        /* if (product.length === 0) {
+            return error_404
+        } */
+
         const productToSend = {
             slug: product[0].slug,
             name: product[0].name,
