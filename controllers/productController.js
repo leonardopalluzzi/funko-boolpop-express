@@ -3,6 +3,7 @@ const connection = require('../db/db');
 function index(req, res) {
     const dateSort = req.query.date;
     const sortBySales = req.query.sales;
+    const sortByPrice = Number(req.query.price);
     const trans = Number(req.query.trans) || 0;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
@@ -12,6 +13,9 @@ function index(req, res) {
     const description = req.query.description || '';
     const category = req.query.category || null;
     const attribute = req.query.attribute || '';
+    const minPrice = Number(req.query.minPrice) || null;
+    const maxPrice = Number(req.query.maxPrice) || null;
+    const promotion = req.query.promotion || null;
 
     const filters = [];
     const values = [];
@@ -39,7 +43,24 @@ function index(req, res) {
         console.log(attribute);
 
         filters.push('a.name LIKE ?')
-        values.push(`%${attribute}`)
+        values.push(`%${attribute}%`)
+    }
+
+    if (minPrice) {
+        console.log(minPrice);
+
+        filters.push('p.price >= ?')
+        values.push(minPrice)
+    }
+
+    if (maxPrice) {
+        filters.push('p.price <= ?');
+        values.push(maxPrice);
+    }
+
+    if (promotion) {
+        filters.push('promotions.name LIKE ?')
+        values.push(`%${promotion}%`)
     }
 
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
@@ -49,7 +70,13 @@ function index(req, res) {
             ? 'ORDER BY total_quantity_sold DESC'
             : dateSort
                 ? 'ORDER BY p.created_at DESC'
-                : '';
+                : (minPrice || maxPrice)
+                    ? 'ORDER BY p.price ASC'
+                    : sortByPrice === 1
+                        ? 'ORDER BY p.price ASC'
+                        : sortByPrice === -1
+                            ? 'ORDER BY p.price DESC'
+                            : '';
 
 
     const countSql = `
@@ -61,6 +88,7 @@ function index(req, res) {
                     LEFT JOIN product_transaction pt ON pt.product_id = p.id
                     LEFT JOIN product_attribute pa ON pa.products_id = p.id
                     LEFT JOIN attributes a ON pa.attributes_id = a.id
+                    LEFT JOIN promotions ON p.promotions_id = promotions.id
                     ${whereClause}
                     GROUP BY p.id
                     HAVING COALESCE(SUM(pt.quantity), 0) >= ?
@@ -80,6 +108,7 @@ function index(req, res) {
         LEFT JOIN product_transaction pt ON pt.product_id = p.id
         LEFT JOIN product_attribute pa ON pa.products_id = p.id
         LEFT JOIN attributes a ON pa.attributes_id = a.id
+        LEFT JOIN promotions ON p.promotions_id = promotions.id
         ${whereClause}
         GROUP BY p.id
         HAVING total_quantity_sold >= ?
@@ -90,10 +119,7 @@ function index(req, res) {
     values.push(trans, limit, offset);
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
-    const attributeSql = `SELECT *
-                          FROM product_attribute AS pa
-                          JOIN products p ON pa.products_id = p.id
-                          JOIN attributes a ON pa.attributes_id = a.id;`
+    const licenseSql = 'SELECT * FROM licenses WHERE licenses.id = ?'
 
     // const queryParams = [searchName, searchDescription, searchCategory, trans, limit, offset]
     // values.push(trans, limit, offset);
@@ -116,24 +142,31 @@ function index(req, res) {
 
                     connection.query(imagesSql, [product.id], (err, images) => {
                         if (err) return res.status(500).json({ state: 'error', message: err.message });
+
                         connection.query(promotionSql, [product.promotions_id], (err, promotions) => {
                             if (err) return res.status(500).json({ state: 'error', message: err.message });
 
-                            const itemToSend = {
-                                slug: product.slug,
-                                name: product.name,
-                                price: product.price,
-                                description: product.description,
-                                created_at: product.created_at,
-                                banner: product.banner,
-                                item_number: product.item_number,
-                                quantity: product.quantity,
-                                transaction_count: product.transaction_count,
-                                images: images,
-                                promotions: promotions
-                            }
+                            connection.query(licenseSql, [product.licenses_id], (err, licenses) => {
+                                if (err) return res.status(500).json({ state: 'error', message: err.message });
 
-                            resolve(itemToSend)
+                                const itemToSend = {
+                                    slug: product.slug,
+                                    name: product.name,
+                                    price: product.price,
+                                    description: product.description,
+                                    created_at: product.created_at,
+                                    banner: product.banner,
+                                    item_number: product.item_number,
+                                    quantity: product.quantity,
+                                    transaction_count: product.transaction_count,
+                                    images: images,
+                                    promotions: promotions,
+                                    license: licenses[0]
+
+                                }
+
+                                resolve(itemToSend)
+                            })
                         })
                     })
                 })
