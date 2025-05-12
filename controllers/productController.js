@@ -81,7 +81,7 @@ function index(req, res) {
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
 
     // const queryParams = [searchName, searchDescription, searchCategory, trans, limit, offset]
-    values.push(trans, limit, offset);
+    // values.push(trans, limit, offset);
 
     connection.query(countSql, countValues, (err, countResult) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
