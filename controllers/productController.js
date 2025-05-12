@@ -1,6 +1,4 @@
 const connection = require('../db/db');
-const error_404 = require('../middlewares/NotFound');
-
 
 function index(req, res) {
     const dateSort = req.query.date;
