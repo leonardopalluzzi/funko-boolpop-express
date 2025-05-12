@@ -161,7 +161,7 @@ function index(req, res) {
                                     transaction_count: product.transaction_count,
                                     images: images,
                                     promotions: promotions,
-                                    license: licenses
+                                    license: licenses[0]
 
                                 }
 
