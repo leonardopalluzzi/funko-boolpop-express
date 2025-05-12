@@ -11,6 +11,7 @@ function index(req, res) {
     const name = req.query.name || '';
     const description = req.query.description || '';
     const category = req.query.category || null;
+    const attribute = req.query.attribute || '';
 
     const filters = [];
     const values = [];
@@ -34,6 +35,13 @@ function index(req, res) {
         values.push(`%${category}%`);
     }
 
+    if (attribute) {
+        console.log(attribute);
+
+        filters.push('a.name LIKE ?')
+        values.push(`%${attribute}`)
+    }
+
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
     const orderClause =
@@ -51,6 +59,8 @@ function index(req, res) {
                     FROM products p
                     JOIN categories c ON p.categories_id = c.id
                     LEFT JOIN product_transaction pt ON pt.product_id = p.id
+                    LEFT JOIN product_attribute pa ON pa.products_id = p.id
+                    LEFT JOIN attributes a ON pa.attributes_id = a.id
                     ${whereClause}
                     GROUP BY p.id
                     HAVING COALESCE(SUM(pt.quantity), 0) >= ?
@@ -68,6 +78,8 @@ function index(req, res) {
         FROM products p
         JOIN categories c ON p.categories_id = c.id
         LEFT JOIN product_transaction pt ON pt.product_id = p.id
+        LEFT JOIN product_attribute pa ON pa.products_id = p.id
+        LEFT JOIN attributes a ON pa.attributes_id = a.id
         ${whereClause}
         GROUP BY p.id
         HAVING total_quantity_sold >= ?
@@ -78,6 +90,10 @@ function index(req, res) {
     values.push(trans, limit, offset);
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
+    const attributeSql = `SELECT *
+                          FROM product_attribute AS pa
+                          JOIN products p ON pa.products_id = p.id
+                          JOIN attributes a ON pa.attributes_id = a.id;`
 
     // const queryParams = [searchName, searchDescription, searchCategory, trans, limit, offset]
     // values.push(trans, limit, offset);
@@ -170,7 +186,6 @@ function show(req, res) {
 
     const productSql = 'SELECT * FROM products WHERE products.slug = ?'
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
-    // const transactionsSql = 'SELECT * FROM transactions WHERE transactions.product_id = ?'
     const categorySql = 'SELECT * FROM categories WHERE categories.id = ?'
     const licenseSql = 'SELECT * FROM licenses WHERE licenses.id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
@@ -179,9 +194,6 @@ function show(req, res) {
     connection.query(productSql, [slug], (err, product) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
 
-        /* if (product.length === 0) {
-            return error_404
-        } */
 
         const productToSend = {
             slug: product[0].slug,

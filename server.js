@@ -4,7 +4,6 @@ const port = process.env.PORT;
 const cors = require('cors');
 const productRouter = require('./routers/productRouter');
 const transactionRouter = require('./routers/transactionRouter');
-const error_404 = require('./middlewares/NotFound');
 
 //middleware per cors
 app.use(cors(
