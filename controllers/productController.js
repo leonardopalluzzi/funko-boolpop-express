@@ -135,8 +135,10 @@ function index(req, res) {
 
                     connection.query(imagesSql, [product.id], (err, images) => {
                         if (err) return res.status(500).json({ state: 'error', message: err.message });
+
                         connection.query(promotionSql, [product.promotions_id], (err, promotions) => {
                             if (err) return res.status(500).json({ state: 'error', message: err.message });
+
                             connection.query(licenseSql, [product.licenses_id], (err, licenses) => {
                                 if (err) return res.status(500).json({ state: 'error', message: err.message });
 
