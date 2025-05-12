@@ -3,6 +3,7 @@ const connection = require('../db/db');
 function index(req, res) {
     const dateSort = req.query.date;
     const sortBySales = req.query.sales;
+    const sortByPrice = Number(req.query.price);
     const trans = Number(req.query.trans) || 0;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
@@ -12,8 +13,8 @@ function index(req, res) {
     const description = req.query.description || '';
     const category = req.query.category || null;
     const attribute = req.query.attribute || '';
-    const minPrice = req.query.minprice || null;
-    const maxPrice = req.query.maxPrice || null;
+    const minPrice = Number(req.query.minPrice) || null;
+    const maxPrice = Number(req.query.maxPrice) || null;
 
 
     const filters = [];
@@ -48,8 +49,8 @@ function index(req, res) {
     if (minPrice) {
         console.log(minPrice);
 
-        filters.push('p.price => ?')
-        values.push(`%${price}%`)
+        filters.push('p.price >= ?')
+        values.push(minPrice)
     }
 
     if (maxPrice) {
@@ -64,7 +65,13 @@ function index(req, res) {
             ? 'ORDER BY total_quantity_sold DESC'
             : dateSort
                 ? 'ORDER BY p.created_at DESC'
-                : '';
+                : (minPrice || maxPrice)
+                    ? 'ORDER BY p.price ASC'
+                    : sortByPrice === 1
+                        ? 'ORDER BY p.price ASC'
+                        : sortByPrice === -1
+                            ? 'ORDER BY p.price DESC'
+                            : '';
 
 
     const countSql = `
