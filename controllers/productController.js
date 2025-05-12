@@ -15,7 +15,7 @@ function index(req, res) {
     const attribute = req.query.attribute || '';
     const minPrice = Number(req.query.minPrice) || null;
     const maxPrice = Number(req.query.maxPrice) || null;
-
+    const promotion = req.query.promotion || null;
 
     const filters = [];
     const values = [];
@@ -58,6 +58,11 @@ function index(req, res) {
         values.push(maxPrice);
     }
 
+    if (promotion) {
+        filters.push('promotions.name LIKE ?')
+        values.push(`%${promotion}%`)
+    }
+
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
     const orderClause =
@@ -83,6 +88,7 @@ function index(req, res) {
                     LEFT JOIN product_transaction pt ON pt.product_id = p.id
                     LEFT JOIN product_attribute pa ON pa.products_id = p.id
                     LEFT JOIN attributes a ON pa.attributes_id = a.id
+                    LEFT JOIN promotions ON p.promotions_id = promotions.id
                     ${whereClause}
                     GROUP BY p.id
                     HAVING COALESCE(SUM(pt.quantity), 0) >= ?
@@ -102,6 +108,7 @@ function index(req, res) {
         LEFT JOIN product_transaction pt ON pt.product_id = p.id
         LEFT JOIN product_attribute pa ON pa.products_id = p.id
         LEFT JOIN attributes a ON pa.attributes_id = a.id
+        LEFT JOIN promotions ON p.promotions_id = promotions.id
         ${whereClause}
         GROUP BY p.id
         HAVING total_quantity_sold >= ?
