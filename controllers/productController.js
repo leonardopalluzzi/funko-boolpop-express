@@ -13,6 +13,8 @@ function index(req, res) {
     const description = req.query.description || '';
     const category = req.query.category || null;
     const attribute = req.query.attribute || null;
+    console.log(attribute);
+
 
     const filters = [];
     const values = [];
@@ -40,7 +42,7 @@ function index(req, res) {
         console.log(attribute);
 
         filters.push('c.attribute LIKE ?');
-        values.push(`%${category}%`);
+        values.push(`%${attribute}%`);
     }
 
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
@@ -142,6 +144,7 @@ function index(req, res) {
                     }
 
                     const getCategory = req.query.getCategory === 'true';
+                    const getAttribute = req.query.getAttribute === 'true';
 
                     if (getCategory) {
 
