@@ -12,6 +12,7 @@ function index(req, res) {
     const name = req.query.name || '';
     const description = req.query.description || '';
     const category = req.query.category || null;
+    const attribute = req.query.attribute || null;
 
     const filters = [];
     const values = [];
@@ -32,6 +33,13 @@ function index(req, res) {
         console.log(category);
 
         filters.push('c.name LIKE ?');
+        values.push(`%${category}%`);
+    }
+
+    if (attribute) {
+        console.log(attribute);
+
+        filters.push('c.attribute LIKE ?');
         values.push(`%${category}%`);
     }
 
