@@ -94,13 +94,20 @@ function store(req, res) {
                         console.log(results);
                     })
                 })
+                return products
             })
-            .then(() => {
+            .then(prodIds => {
+                const orderInfoData = [...prodIds]
+                return orderInfoData
+            })
+            .then((orderInfoData) => {
                 //creo payment intent
+                console.log('questo e il log della lista di id prodtto:' + orderInfoData);
                 return stripe.paymentIntents.create({
                     amount: Math.round(total * 100),
                     currency: 'eur',
                     metadata: {
+                        orderInfo: JSON.stringify(orderInfoData),
                         transaction_id: transactionId,
                         email: useremail
                     },
@@ -127,7 +134,6 @@ function store(req, res) {
 
 function payment(req, res) {
     // rotta per ricevere il webhook di stripe e l'esito della transazione e aggiornare la righa del db
-
     const sig = req.headers['stripe-signature']
 
     let event
@@ -144,9 +150,30 @@ function payment(req, res) {
         console.log(event);
 
         const paymentIntent = event.data.object;
+        console.log('payment intent ciao:' + JSON.stringify(paymentIntent));
+
+        const orderInfo = JSON.parse(paymentIntent.metadata.orderInfo);
+
+        console.log('orderinfo ciao:' + JSON.stringify(orderInfo));
+
+
+        const pIds = orderInfo.map(item => item)
+
+        console.log('log di pids' + JSON.stringify(pIds));
+
+
         //aggiornare db
         const updateDbSql = 'UPDATE transactions SET status = ? WHERE transactions.stripe_payment_id = ?'
-        //diminuire di 1 la quiantita disponibile in db
+        const updateQuantitySql = 'UPDATE products SET quantity = quantity - ? WHERE products.id = ?'
+        pIds.forEach(item => {
+            console.log(item.product_quantity);
+
+            connection.query(updateQuantitySql, [item.product_quantity, item.product_id.id], (err, results) => {
+                if (err) return res.status(500).json({ state: 'error', message: err.message })
+
+            })
+        })
+
 
         connection.query(updateDbSql, ['succeeded', paymentIntent.id], (err, results) => {
             if (err) return res.satatus(500).json({ state: 'error', message: err.message });
