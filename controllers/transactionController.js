@@ -13,6 +13,30 @@ function show(req, res) {
 
 function store(req, res) {
 
+    const cart = req.body.cart
+
+
+    //calcolo amount
+    let total = 0;
+
+    const priceArr = cart.map(item => {
+        console.log(item);
+
+        const basePrice = Number(item.price)
+        const discount = Array.isArray(item.promotion) && item.promotion.length > 0 ? Number(item.promotion[0].discount) : 100
+        const quantity = Number(item.cartQuantity)
+
+        let price = (basePrice * discount / 100) * quantity;
+
+        console.log(price);
+
+        return Number(price)
+    })
+
+    priceArr.forEach(item => {
+        total = total + item
+    })
+
 
     function getCurrentMySQLDateTime() {
         const now = new Date();
@@ -74,7 +98,7 @@ function store(req, res) {
             .then(() => {
                 //creo payment intent
                 return stripe.paymentIntents.create({
-                    amount: Math.round(amount * 100),
+                    amount: Math.round(total * 100),
                     currency: 'eur',
                     metadata: {
                         transaction_id: transactionId,

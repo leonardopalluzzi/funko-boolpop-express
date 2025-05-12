@@ -44,6 +44,24 @@ function index(req, res) {
                 ? 'ORDER BY p.created_at DESC'
                 : '';
 
+
+    const countSql = `
+                SELECT COUNT(*) AS total
+                FROM (
+                    SELECT p.id
+                    FROM products p
+                    JOIN categories c ON p.categories_id = c.id
+                    LEFT JOIN product_transaction pt ON pt.product_id = p.id
+                    ${whereClause}
+                    GROUP BY p.id
+                    HAVING COALESCE(SUM(pt.quantity), 0) >= ?
+                ) AS filtered;
+            `;
+
+    const countValues = [...values, trans];
+
+
+
     const productSql = `
         SELECT 
             p.*, 
@@ -63,76 +81,88 @@ function index(req, res) {
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
 
     // const queryParams = [searchName, searchDescription, searchCategory, trans, limit, offset]
-    values.push(trans, limit, offset);
+    // values.push(trans, limit, offset);
 
-    connection.query(productSql, values, (err, products) => {
+    connection.query(countSql, countValues, (err, countResult) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
 
-        const productList = products
+        const total = countResult[0].total;
+        const totalPages = Math.ceil(total / limit);
+
+        connection.query(productSql, values, (err, products) => {
+            if (err) return res.status(500).json({ state: 'error', message: err.message });
+
+            const productList = products
+
+            const productListToSend = (productList.map(product => {
+                return new Promise((resolve, reject) => {
+                    if (err) return reject(err);
 
 
-
-        const productListToSend = (productList.map(product => {
-            return new Promise((resolve, reject) => {
-                if (err) return reject(err);
-
-
-                connection.query(imagesSql, [product.id], (err, images) => {
-                    if (err) return res.status(500).json({ state: 'error', message: err.message });
-                    connection.query(promotionSql, [product.promotions_id], (err, promotions) => {
+                    connection.query(imagesSql, [product.id], (err, images) => {
                         if (err) return res.status(500).json({ state: 'error', message: err.message });
+                        connection.query(promotionSql, [product.promotions_id], (err, promotions) => {
+                            if (err) return res.status(500).json({ state: 'error', message: err.message });
 
-                        const itemToSend = {
-                            slug: product.slug,
-                            name: product.name,
-                            price: product.price,
-                            description: product.description,
-                            created_at: product.created_at,
-                            banner: product.banner,
-                            item_number: product.item_number,
-                            quantity: product.quantity,
-                            transaction_count: product.transaction_count,
-                            images: images,
-                            promotions: promotions
-                        }
+                            const itemToSend = {
+                                slug: product.slug,
+                                name: product.name,
+                                price: product.price,
+                                description: product.description,
+                                created_at: product.created_at,
+                                banner: product.banner,
+                                item_number: product.item_number,
+                                quantity: product.quantity,
+                                transaction_count: product.transaction_count,
+                                images: images,
+                                promotions: promotions
+                            }
 
-                        resolve(itemToSend)
+                            resolve(itemToSend)
+                        })
                     })
                 })
-            })
-        }))
+            }))
 
-        Promise.all(productListToSend)
-            .then(productListToSend => {
-                const searchOnly = req.query.searchOnly === 'true';
-                const hasFilters = name || description || category;
+            Promise.all(productListToSend)
+                .then(productListToSend => {
+                    const searchOnly = req.query.searchOnly === 'true';
+                    const hasFilters = name || description || category;
 
-                if (searchOnly && !hasFilters) {
-                    return res.json([]); // oppure res.status(204).send(); se vuoi nessun contenuto
-                }
+                    if (searchOnly && !hasFilters) {
+                        return res.json([]); // oppure res.status(204).send(); se vuoi nessun contenuto
+                    }
 
-                const getCategory = req.query.getCategory === 'true';
+                    const getCategory = req.query.getCategory === 'true';
 
-                if (getCategory) {
+                    if (getCategory) {
 
-                    const getCategorySql = 'SELECT categories.name FROM categories';
+                        const getCategorySql = 'SELECT categories.name FROM categories';
 
-                    connection.query(getCategorySql, (err, results) => {
-                        if (err) {
-                            console.error(err);
-                            return res.status(500).json({ state: 'error', message: err.message });
-                        }
+                        connection.query(getCategorySql, (err, results) => {
+                            if (err) {
+                                console.error(err);
+                                return res.status(500).json({ state: 'error', message: err.message });
+                            }
 
-                        res.json(results);
-                    });
+                            res.json(results);
+                        });
 
-                    return;
-                }
+                        return;
+                    }
 
-                res.json(productListToSend)
-            })
-            .catch(err => res.status(500).json({ state: 'error', message: err.message }))
-    });
+                    res.json({
+                        currentPage: page,
+                        totalPages,
+                        totalResults: total,
+                        results: productListToSend
+                    })
+                })
+                .catch(err => res.status(500).json({ state: 'error', message: err.message }))
+        });
+    })
+
+
 }
 
 function show(req, res) {
