@@ -11,14 +11,22 @@ function index(req, res) {
 
     const name = req.query.name || '';
     const description = req.query.description || '';
-    const category = req.query.category || null;
+    const category = req.query.category || '';
     const attribute = req.query.attribute || '';
-    const minPrice = Number(req.query.minPrice) || null;
-    const maxPrice = Number(req.query.maxPrice) || null;
-    const promotion = req.query.promotion || null;
+    const minPrice = Number(req.query.minPrice) || 0;
+    const maxPrice = Number(req.query.maxPrice) || 1000;
+    const promotion = req.query.promotion || '';
 
     const filters = [];
     const values = [];
+
+    if (typeof name !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid name parameter' });
+    if (typeof description !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid description parameter' });
+    if (typeof category !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid category parameter' });
+    if (typeof attribute !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid attribute parameter' });
+    if (typeof minPrice !== 'number') return res.status(400).json({ state: 'error', message: 'Invalid minPrice parameter' });
+    if (typeof maxPrice !== 'number') return res.status(400).json({ state: 'error', message: 'Invalid maxPrice parameter' });
+    if (typeof promotion !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid promotion parameter' });
 
     if (name) {
         filters.push('p.name LIKE ?');
@@ -178,7 +186,12 @@ function index(req, res) {
                     const hasFilters = name || description || category;
 
                     if (searchOnly && !hasFilters) {
-                        return res.json([]); // oppure res.status(204).send(); se vuoi nessun contenuto
+                        return res.json({
+                            currentPage: 1,
+                            totalPages: 0,
+                            totalResults: 0,
+                            results: []
+                        });
                     }
 
                     const getCategory = req.query.getCategory === 'true';
