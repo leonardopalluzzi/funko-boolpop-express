@@ -199,6 +199,7 @@ function index(req, res) {
                     }
 
                     const getCategory = req.query.getCategory === 'true';
+                    const getPromo = req.query.getPromo === 'true';
 
                     if (getCategory) {
 
@@ -213,6 +214,21 @@ function index(req, res) {
                             res.json(results);
                         });
 
+                        return;
+                    }
+
+                    if (getPromo) {
+
+                        const getPromoSql = 'SELECT promotions.name FROM promotions'
+
+                        connection.query(getPromoSql, (err, results) => {
+                            if (err) {
+                                console.error(err);
+                                return res.status(500).json({ state: 'error', message: err.message });
+                            }
+
+                            res.json(results);
+                        });
                         return;
                     }
 
