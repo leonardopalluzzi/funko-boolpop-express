@@ -228,7 +228,7 @@ function payment(req, res) {
 
 
 
-        const msg = {
+        const msg = { // non viene inviata l'email
             to: paymentIntent.metadata.useremail, // Change to your recipient
             from: 'lp.palluzzi@gmail.com', // Change to your verified sender
             subject: 'You purchase is confirmed',
@@ -255,8 +255,8 @@ function payment(req, res) {
             subject: `New purchase by ${paymentIntent.metadata.username}`,
             templateId: 'd-22cafe66b217464f90a5c2c2a33594ce',
             dynamicTemplateData: {
-                cart: htmlItems,
-                first_name: paymentIntent.metadata.username,
+                cart: htmlItems, //sezione di html
+                first_name: paymentIntent.metadata.username, // non viene letto nell'email
                 email: paymentIntent.metadata.useremail,
                 amount: paymentIntent.metadata.amount,
                 shipping: paymentIntent.metadata.shipping
