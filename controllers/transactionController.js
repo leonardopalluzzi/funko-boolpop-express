@@ -192,10 +192,16 @@ function payment(req, res) {
 
 
         })
+
+        const htmlItems = pIds.map(item => {
+            return `<p>Prodotto: ${item.product_id}, Quantità: ${item.product_quantity}</p>`;
+        }).join('');
+
+
         const msg = {
             to: paymentIntent.metadata.useremail, // Change to your recipient
             from: 'lp.palluzzi@gmail.com', // Change to your verified sender
-            subject: 'hai comprato sta robetta zi',
+            subject: 'You purchase is confirmed',
             templateId: 'd-185cf24d10d445ef961b4729ac77f8f0',
             dynamicTemplateData: {
                 first_name: paymentIntent.metadata.username,
@@ -206,6 +212,28 @@ function payment(req, res) {
         }
         sgMail
             .send(msg)
+            .then(() => {
+                console.log('Email sent')
+            })
+            .catch((error) => {
+                console.error(error)
+            })
+
+        const msgSeller = {
+            to: 'lp.palluzzi@gmail.com', // Change to your recipient
+            from: 'lp.palluzzi@gmail.com', // Change to your verified sender
+            subject: `New purchase by ${paymentIntent.metadata.username}`,
+            templateId: 'd-22cafe66b217464f90a5c2c2a33594ce',
+            dynamicTemplateData: {
+                cart: htmlItems,
+                first_name: paymentIntent.metadata.username,
+                email: paymentIntent.metadata.useremail,
+                amount: paymentIntent.metadata.amount,
+                shipping: paymentIntent.metadata.shipping
+            }
+        }
+        sgMail
+            .send(msgSeller)
             .then(() => {
                 console.log('Email sent')
             })
