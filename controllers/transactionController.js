@@ -96,14 +96,6 @@ function store(req, res) {
                     return res.status(404).json({ state: 'error', message: 'Product not found' })
                 }
 
-                // products.forEach(item => {
-                //     connection.query(updatePivotSql, [item.product_id.id, transactionId, item.product_quantity], (err, results) => {
-                //         if (err) return res.status(500).json({ state: 'error', message: err.message });
-                //     })
-                // })
-                // return products
-
-
                 return Promise.all(
                     products.map(item => {
                         return new Promise((resolve, reject) => {
@@ -212,7 +204,7 @@ function payment(req, res) {
         pIds.forEach(item => {
             console.log(item.product_quantity);
 
-            connection.query(updateQuantitySql, [item.product_quantity, item.product_id.id], (err, results) => {
+            connection.query(updateQuantitySql, [item.product_quantity, item.product_id], (err, results) => {
                 if (err) return res.status(500).json({ state: 'error', message: err.message })
 
             })
@@ -229,10 +221,10 @@ function payment(req, res) {
         })
 
         const htmlItems = pIds.map(item => {
-            return `<p>Prodotto: ${item.product_id.name}, Quantità: ${item.product_quantity}</p>`;
+            return `<p>ID Prodotto: ${item.product_id} Prodotto: ${item.name}, Quantità: ${item.product_quantity}, Prezzo: ${item.price}</p>`;
         }).join('');
 
-        console.log(htmlItems);
+        console.log(`questi e l'html per l'email:` + htmlItems);
 
 
 
