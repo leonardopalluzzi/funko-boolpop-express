@@ -56,7 +56,7 @@ function store(req, res) {
     const { products_info, username, useremail, amount, status, stripe_payment_id, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap } = req.body
 
     if (!useremail) return res.status(400).json({ state: 'error', message: 'email required' });
-    if (amount.toFixed(2) !== total.toFixed(2)) return res.status(400).json({ state: 'error', message: 'error in defining amount' })
+    if (Number(amount.toFixed(2)) !== Number(total.toFixed(2))) return res.status(400).json({ state: 'error', message: 'error in defining amount' })
 
 
     const values = [username, useremail, amount, status, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap]
@@ -64,7 +64,7 @@ function store(req, res) {
 
     const saveIntentSql = `INSERT INTO transactions (username, useremail, amount, status, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap) 
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    const recoverProdIdSql = 'SELECT products.id FROM products WHERE products.slug = ?'
+    const recoverProdIdSql = 'SELECT products.id AS pId, products.name AS name, products.price AS price FROM products WHERE products.slug = ?'
     const updatePivotSql = 'INSERT INTO product_transaction (product_id, transaction_id, quantity) VALUES (?, ?, ?)'
 
     connection.query(saveIntentSql, values, (err, results) => {
@@ -79,7 +79,9 @@ function store(req, res) {
                     if (!prodId.length) return reject(new Error(`Prodotto non trovato: ${item.item_slug}`));
                     resolve(
                         {
-                            product_id: prodId[0],
+                            name: prodId[0].name,
+                            price: prodId[0].price,
+                            product_id: prodId[0].pId,
                             product_quantity: item.item_quantity
                         }
                     )
@@ -90,19 +92,43 @@ function store(req, res) {
         //aggiornare pivot
         Promise.all(prodIds)
             .then(products => {
+                if (!products) {
+                    return res.status(404).json({ state: 'error', message: 'Product not found' })
+                }
 
-                products.forEach(item => {
-                    connection.query(updatePivotSql, [item.product_id.id, transactionId, item.product_quantity], (err, results) => {
-                        if (err) return res.status(500).json({ state: 'error', message: err.message });
+                // products.forEach(item => {
+                //     connection.query(updatePivotSql, [item.product_id.id, transactionId, item.product_quantity], (err, results) => {
+                //         if (err) return res.status(500).json({ state: 'error', message: err.message });
+                //     })
+                // })
+                // return products
+
+
+                return Promise.all(
+                    products.map(item => {
+                        return new Promise((resolve, reject) => {
+                            connection.query(updatePivotSql, [item.product_id, transactionId, item.product_quantity], (err, results) => {
+                                if (err) return reject(err);
+                                resolve(results);
+                            });
+                        });
                     })
-                })
-                return products
+                )
+                    .then(() => products);
+
+
             })
             .then(prodIds => {
+                if (!prodIds) {
+                    return res.status(404).json({ state: 'error', message: 'prodIds not found' })
+                }
                 const orderInfoData = [...prodIds]
                 return orderInfoData
             })
             .then((orderInfoData) => {
+                if (!orderInfoData) {
+                    return res.status(404).json({ state: 'error', message: 'orderInfoData not found' })
+                }
                 //creo payment intent
                 return stripe.paymentIntents.create({
                     amount: Math.round(total * 100),
@@ -121,7 +147,9 @@ function store(req, res) {
             })
             //aggiorno i campi della transazione
             .then(paymentIntent => {
-
+                if (!paymentIntent) {
+                    return res.status(404).json({ state: 'error', message: 'paymentIntent not found' })
+                }
                 const updateSql = 'UPDATE transactions SET stripe_payment_id = ?, status = ? WHERE transactions.id = ?'
                 const values = [paymentIntent.id, paymentIntent.status, transactionId]
                 connection.query(updateSql, values, (err, results) => {
@@ -131,10 +159,17 @@ function store(req, res) {
                 return paymentIntent
             })
             .then(paymentIntent => {
-
-                res.json({ clientSecret: paymentIntent.client_secret })
+                if (!paymentIntent) {
+                    return res.status(404).json({ state: 'error', message: 'paymentIntent not found' })
+                }
+                return res.json({ clientSecret: paymentIntent.client_secret })
             })
-            .catch(err => res.status(500).json({ state: 'error', message: err.message }))
+            .catch(err => {
+                console.error(err);
+                if (!res.headersSent) {
+                    res.status(500).json({ state: 'error', message: err.message });
+                }
+            })
     })
 }
 
@@ -185,7 +220,7 @@ function payment(req, res) {
 
 
         connection.query(updateDbSql, ['succeeded', paymentIntent.id], (err, results) => {
-            if (err) return res.satatus(500).json({ state: 'error', message: err.message });
+            if (err) return res.status(500).json({ state: 'error', message: err.message });
 
             res.status(200).json(results)
 
@@ -194,8 +229,11 @@ function payment(req, res) {
         })
 
         const htmlItems = pIds.map(item => {
-            return `<p>Prodotto: ${item.product_id}, Quantità: ${item.product_quantity}</p>`;
+            return `<p>Prodotto: ${item.product_id.name}, Quantità: ${item.product_quantity}</p>`;
         }).join('');
+
+        console.log(htmlItems);
+
 
 
         const msg = {
