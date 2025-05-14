@@ -187,7 +187,7 @@ function index(req, res) {
             Promise.all(productListToSend)
                 .then(productListToSend => {
                     const searchOnly = req.query.searchOnly === 'true';
-                    const hasFilters = name || description || category;
+                    const hasFilters = name || description || category || attribute || maxPrice || minPrice || promotion;
 
                     if (searchOnly && !hasFilters) {
                         return res.json({
