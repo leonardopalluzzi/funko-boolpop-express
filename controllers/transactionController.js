@@ -20,7 +20,6 @@ function store(req, res) {
     let total = 0;
 
     const priceArr = cart.map(item => {
-        console.log(item);
 
         const basePrice = Number(item.price)
         const discount = Array.isArray(item.promotion) && item.promotion.length > 0 ? Number(item.promotion[0].discount) : 100
@@ -56,7 +55,7 @@ function store(req, res) {
     const { products_info, username, useremail, amount, status, stripe_payment_id, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap } = req.body
 
     if (!useremail) return res.status(400).json({ state: 'error', message: 'email required' });
-    if (amount !== total) return res.status(400).json({ state: 'error', message: 'error in defining amount' })
+    if (amount.toFixed(2) !== total.toFixed(2)) return res.status(400).json({ state: 'error', message: 'error in defining amount' })
 
 
     const values = [username, useremail, amount, status, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap]
@@ -91,11 +90,9 @@ function store(req, res) {
         Promise.all(prodIds)
             .then(products => {
 
-                console.log(products);
                 products.forEach(item => {
                     connection.query(updatePivotSql, [item.product_id.id, transactionId, item.product_quantity], (err, results) => {
                         if (err) return res.status(500).json({ state: 'error', message: err.message });
-                        console.log(results);
                     })
                 })
                 return products
@@ -130,6 +127,8 @@ function store(req, res) {
                 return paymentIntent
             })
             .then(paymentIntent => {
+                console.log(`client secret log matto:` + paymentIntent.client_secret);
+
                 res.json({ clientSecret: paymentIntent.client_secret })
             })
             .catch(err => res.status(500).json({ state: 'error', message: err.message }))
