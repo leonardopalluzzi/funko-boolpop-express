@@ -1,6 +1,10 @@
 const connection = require('../db/db');
 
 function index(req, res) {
+
+    console.log(req.query);
+
+
     const dateSort = req.query.date;
     const sortBySales = req.query.sales;
     const sortByPrice = Number(req.query.price);
