@@ -1,7 +1,8 @@
 const connection = require('../db/db')
 const stripe = require('stripe')(process.env.STRIPE_SECRET_API_KEY);
 const endpointSecret = process.env.WEB_HOOK_SECRET;
-
+const sgMail = require('@sendgrid/mail')
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
 function index(req, res) {
 
@@ -103,14 +104,17 @@ function store(req, res) {
             })
             .then((orderInfoData) => {
                 //creo payment intent
-                console.log('questo e il log della lista di id prodtto:' + orderInfoData);
                 return stripe.paymentIntents.create({
                     amount: Math.round(total * 100),
                     currency: 'eur',
+                    receipt_email: useremail,
                     metadata: {
                         orderInfo: JSON.stringify(orderInfoData),
                         transaction_id: transactionId,
-                        email: useremail
+                        email: useremail,
+                        usefirst_name: username,
+                        amount: amount,
+                        shipping: 10
                     },
                 })
 
@@ -127,7 +131,6 @@ function store(req, res) {
                 return paymentIntent
             })
             .then(paymentIntent => {
-                console.log(`client secret log matto:` + paymentIntent.client_secret);
 
                 res.json({ clientSecret: paymentIntent.client_secret })
             })
@@ -138,6 +141,8 @@ function store(req, res) {
 function payment(req, res) {
     // rotta per ricevere il webhook di stripe e l'esito della transazione e aggiornare la righa del db
     const sig = req.headers['stripe-signature']
+    console.log('log inizio rotta payment');
+
 
     let event
 
@@ -150,7 +155,8 @@ function payment(req, res) {
     }
 
     if (event.type === 'payment_intent.succeeded') {
-        console.log(event);
+
+        console.log('ciao chicco');
 
         const paymentIntent = event.data.object;
         console.log('payment intent ciao:' + JSON.stringify(paymentIntent));
@@ -180,10 +186,32 @@ function payment(req, res) {
 
         connection.query(updateDbSql, ['succeeded', paymentIntent.id], (err, results) => {
             if (err) return res.satatus(500).json({ state: 'error', message: err.message });
-            console.log(results);
+
             res.status(200).json(results)
 
+
+
         })
+        const msg = {
+            to: 'lp.palluzzi@gmail.com', // Change to your recipient
+            from: 'lp.palluzzi@gmail.com', // Change to your verified sender
+            subject: 'hai comprato sta robetta zi',
+            templateId: 'd-185cf24d10d445ef961b4729ac77f8f0',
+            dynamicTemplateData: {
+                first_name: paymentIntent.metadata.username,
+                email: paymentIntent.metadata.useremail,
+                amount: paymentIntent.metadata.amount,
+                shipping: paymentIntent.metadata.shipping
+            }
+        }
+        sgMail
+            .send(msg)
+            .then(() => {
+                console.log('Email sent')
+            })
+            .catch((error) => {
+                console.error(error)
+            })
     }
 }
 
