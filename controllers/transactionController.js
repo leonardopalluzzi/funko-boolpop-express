@@ -193,7 +193,7 @@ function payment(req, res) {
 
         })
         const msg = {
-            to: 'lp.palluzzi@gmail.com', // Change to your recipient
+            to: paymentIntent.metadata.useremail, // Change to your recipient
             from: 'lp.palluzzi@gmail.com', // Change to your verified sender
             subject: 'hai comprato sta robetta zi',
             templateId: 'd-185cf24d10d445ef961b4729ac77f8f0',
