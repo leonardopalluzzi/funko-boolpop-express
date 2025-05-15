@@ -5,14 +5,12 @@ function index(req, res) {
     console.log(req.query);
 
 
-    const dateSort = req.query.date;
-    const sortBySales = req.query.sales;
+    let dateSort = Number(req.query.date);
+    let sortBySales = Number(req.query.sales);
     const sortByPrice = Number(req.query.price);
-    const trans = Number(req.query.trans) || 0;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
     const offset = (page - 1) * limit;
-
     const name = req.query.name || '';
     const description = req.query.description || '';
     const category = req.query.category || '';
@@ -23,7 +21,9 @@ function index(req, res) {
 
     const filters = [];
     const values = [];
-
+    console.log(sortBySales, req.query.sales);
+    console.log(dateSort);
+    // Validazioni
     if (typeof name !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid name parameter' });
     if (typeof description !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid description parameter' });
     if (typeof category !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid category parameter' });
@@ -31,6 +31,25 @@ function index(req, res) {
     if (typeof minPrice !== 'number') return res.status(400).json({ state: 'error', message: 'Invalid minPrice parameter' });
     if (typeof maxPrice !== 'number') return res.status(400).json({ state: 'error', message: 'Invalid maxPrice parameter' });
     if (typeof promotion !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid promotion parameter' });
+    if (sortBySales) {
+        if (sortBySales !== 1) {
+            if (sortBySales !== -1) {
+                return res.status(400).json({ state: 'error', message: 'Invalid sales parameter' });
+            }
+        }
+    } else {
+        sortBySales = 1
+    }
+
+    if (dateSort) {
+        if (dateSort !== 1) {
+            if (dateSort !== -1) {
+                return res.status(400).json({ state: 'error', message: 'Invalid date parameter' });
+            }
+        }
+    } else {
+        dateSort = 1
+    }
 
     if (name) {
         filters.push('p.name LIKE ?');
@@ -77,11 +96,11 @@ function index(req, res) {
 
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
-    const orderClause =
-        sortBySales
+    const priceOrderClause =
+        sortBySales === 1
             ? 'ORDER BY total_quantity_sold DESC'
-            : dateSort
-                ? 'ORDER BY p.created_at DESC'
+            : sortBySales === - 1
+                ? 'ORDER BY total_quantity_sold ASC'
                 : (minPrice || maxPrice)
                     ? 'ORDER BY p.price ASC'
                     : sortByPrice === 1
@@ -89,6 +108,12 @@ function index(req, res) {
                         : sortByPrice === -1
                             ? 'ORDER BY p.price DESC'
                             : '';
+    const dateOrderClause =
+        dateSort === 1
+            ? ' p.created_at DESC'
+            : dateSort === -1
+                ? ' p.created_at ASC'
+                : '';
 
 
     const countSql = `
@@ -103,11 +128,10 @@ function index(req, res) {
                     LEFT JOIN promotions ON p.promotions_id = promotions.id
                     ${whereClause}
                     GROUP BY p.id
-                    HAVING COALESCE(SUM(pt.quantity), 0) >= ?
                 ) AS filtered;
             `;
 
-    const countValues = [...values, trans];
+    const countValues = [...values];
 
 
 
@@ -123,12 +147,11 @@ function index(req, res) {
         LEFT JOIN promotions ON p.promotions_id = promotions.id
         ${whereClause}
         GROUP BY p.id
-        HAVING total_quantity_sold >= ?
-        ${orderClause}
+        ${priceOrderClause}, ${dateOrderClause}
         LIMIT ? OFFSET ?
     `;
 
-    values.push(trans, limit, offset);
+    values.push(limit, offset);
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
     const licenseSql = 'SELECT * FROM licenses WHERE licenses.id = ?'
@@ -137,6 +160,7 @@ function index(req, res) {
                             FROM attributes a 
                             JOIN product_attribute pa ON a.id = pa.attributes_id 
                             WHERE pa.products_id = ?`
+    console.log(productSql);
 
     connection.query(countSql, countValues, (err, countResult) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
@@ -152,7 +176,6 @@ function index(req, res) {
             const productListToSend = (productList.map(product => {
                 return new Promise((resolve, reject) => {
                     if (err) return reject(err);
-
 
                     connection.query(imagesSql, [product.id], (err, images) => {
                         if (err) return res.status(500).json({ state: 'error', message: err.message });
@@ -200,8 +223,7 @@ function index(req, res) {
             Promise.all(productListToSend)
                 .then(productListToSend => {
                     const searchOnly = req.query.searchOnly === 'true';
-                    const hasFilters = name || description || category || attribute || minPrice || maxPrice || promotion;
-                    console.log(attribute, promotion);
+                    const hasFilters = name || description || category || attribute || minPrice || maxPrice || promotion || sortByPrice || sortBySales || dateSort;
 
                     if (searchOnly && !hasFilters) {
                         return res.json({
@@ -291,10 +313,6 @@ function show(req, res) {
         connection.query(imagesSql, [pId], (err, images) => {
             if (err) return res.status(500).json({ state: 'error', message: err.message });
             productToSend.images = images
-
-            // connection.query(transactionsSql, [pId], (err, transactions) => {
-            //     if (err) return res.status(500).json({ state: 'error', message: err.message });
-            //     productToSend.transactions = transactions
 
             connection.query(categorySql, [product[0].categories_id], (err, category) => {
                 if (err) return res.status(500).json({ state: 'error', message: err.message });
