@@ -37,8 +37,6 @@ function index(req, res) {
                 return res.status(400).json({ state: 'error', message: 'Invalid sales parameter' });
             }
         }
-    } else {
-        sortBySales = 1
     }
 
     if (dateSort) {
@@ -47,8 +45,6 @@ function index(req, res) {
                 return res.status(400).json({ state: 'error', message: 'Invalid date parameter' });
             }
         }
-    } else {
-        dateSort = 1
     }
 
     if (name) {
@@ -108,12 +104,22 @@ function index(req, res) {
                         : sortByPrice === -1
                             ? 'ORDER BY p.price DESC'
                             : '';
-    const dateOrderClause =
-        dateSort === 1
-            ? ' p.created_at DESC'
+    let dateOrderClause = ''
+
+    if (priceOrderClause !== '') {
+        dateOrderClause = dateSort === 1
+            ? ', p.created_at DESC'
             : dateSort === -1
-                ? ' p.created_at ASC'
+                ? ', p.created_at ASC'
                 : '';
+    } else {
+        dateOrderClause = dateSort === 1
+            ? 'ORDER BY p.created_at DESC'
+            : dateSort === -1
+                ? 'ORDER BY p.created_at ASC'
+                : '';
+    }
+
 
 
     const countSql = `
@@ -147,7 +153,7 @@ function index(req, res) {
         LEFT JOIN promotions ON p.promotions_id = promotions.id
         ${whereClause}
         GROUP BY p.id
-        ${priceOrderClause}, ${dateOrderClause}
+        ${priceOrderClause}${dateOrderClause}
         LIMIT ? OFFSET ?
     `;
 
