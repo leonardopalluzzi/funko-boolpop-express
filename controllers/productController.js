@@ -92,7 +92,7 @@ function index(req, res) {
 
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
-    const priceOrderClause =
+    let priceOrderClause =
         sortBySales === 1
             ? 'ORDER BY total_quantity_sold DESC'
             : sortBySales === - 1
@@ -104,6 +104,32 @@ function index(req, res) {
                         : sortByPrice === -1
                             ? 'ORDER BY p.price DESC'
                             : '';
+
+    if (sortBySales) {
+        priceOrderClause =
+            sortBySales === 1
+                ? 'ORDER BY total_quantity_sold DESC'
+                : sortBySales === - 1
+                    ? 'ORDER BY total_quantity_sold ASC'
+                    : (minPrice || maxPrice)
+                        ? 'ORDER BY p.price ASC'
+                        : sortByPrice === 1
+                            ? 'ORDER BY p.price ASC'
+                            : sortByPrice === -1
+                                ? 'ORDER BY p.price DESC'
+                                : '';
+    } else {
+        priceOrderClause =
+            (minPrice || maxPrice)
+                ? 'ORDER BY p.price ASC'
+                : sortByPrice === 1
+                    ? 'ORDER BY p.price ASC'
+                    : sortByPrice === -1
+                        ? 'ORDER BY p.price DESC'
+                        : '';
+    }
+
+
     let dateOrderClause = ''
 
     if (priceOrderClause !== '') {
