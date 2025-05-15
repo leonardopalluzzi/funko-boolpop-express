@@ -183,7 +183,7 @@ function index(req, res) {
                                             promotions: promotions,
                                             license: licenses[0],
                                             category: categories,
-                                            attribute: attributes[0] || null
+                                            attribute: attributes
                                         }
                                         resolve(itemToSend)
 
