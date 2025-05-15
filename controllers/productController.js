@@ -2,7 +2,6 @@ const connection = require('../db/db');
 
 function index(req, res) {
 
-    console.log(req.query);
 
 
     let dateSort = Number(req.query.date);
@@ -21,9 +20,6 @@ function index(req, res) {
 
     const filters = [];
     const values = [];
-
-    console.log(maxPrice, minPrice);
-    console.log(req.query.minPrice, req.query.maxPrice);
 
     // Validazioni
     if (typeof name !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid name parameter' });
@@ -55,28 +51,24 @@ function index(req, res) {
     }
 
     if (description) {
-        console.log(description);
 
         filters.push('p.description LIKE ?');
         values.push(`%${description}%`);
     }
 
     if (category) {
-        console.log(category);
 
         filters.push('c.name LIKE ?');
         values.push(`%${category}%`);
     }
 
     if (attribute) {
-        console.log(attribute);
 
         filters.push('a.name LIKE ?')
         values.push(`%${attribute}%`)
     }
 
     if (minPrice) {
-        console.log(minPrice);
 
         filters.push('p.price >= ?')
         values.push(minPrice)
@@ -157,7 +149,6 @@ function index(req, res) {
     const countValues = [...values];
 
 
-
     const productSql = `
         SELECT 
             p.*, 
@@ -183,7 +174,6 @@ function index(req, res) {
                             FROM attributes a 
                             JOIN product_attribute pa ON a.id = pa.attributes_id 
                             WHERE pa.products_id = ?`
-    console.log(productSql);
 
     connection.query(countSql, countValues, (err, countResult) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
@@ -385,7 +375,6 @@ function show(req, res) {
                     })
                 })
             })
-            // })
         })
     })
 
