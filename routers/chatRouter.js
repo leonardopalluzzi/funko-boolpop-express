@@ -1,31 +1,31 @@
 const express = require('express')
 const router = express.Router()
-const productController = require('../controllers/productController')
+const chatController = require('../controllers/chatController')
 const error_404 = require('../middlewares/NotFound')
 
 // Index
 
-router.get('/', productController.index)
+router.get('/', chatController.index)
 
 // Show
 
-router.get('/:slug', error_404, productController.show)
+router.get('/:slug', error_404, chatController.show)
 
 // Store
 
-router.post('/', productController.store)
+router.post('/', chatController.store)
 
 // Update
 
-router.put('/:slug', productController.update)
+router.put('/:slug', chatController.update)
 
 // Modify
 
-router.patch('/:slug', productController.modify)
+router.patch('/:slug', chatController.modify)
 
 // Destroy
 
-router.delete('/:slug', productController.destroy)
+router.delete('/:slug', chatController.destroy)
 
 
 module.exports = router;
