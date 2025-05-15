@@ -133,9 +133,10 @@ function index(req, res) {
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
     const licenseSql = 'SELECT * FROM licenses WHERE licenses.id = ?'
     const categorySql = 'SELECT * FROM categories WHERE categories.id = ?'
-
-    // const queryParams = [searchName, searchDescription, searchCategory, trans, limit, offset]
-    // values.push(trans, limit, offset);
+    const attributeSql = ` SELECT a.* 
+                            FROM attributes a 
+                            JOIN product_attribute pa ON a.id = pa.attributes_id 
+                            WHERE pa.products_id = ?`
 
     connection.query(countSql, countValues, (err, countResult) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
@@ -165,22 +166,28 @@ function index(req, res) {
                                 connection.query(categorySql, [product.categories_id], (err, categories) => {
                                     if (err) return res.status(500).json({ state: 'error', message: err.message });
 
-                                    const itemToSend = {
-                                        slug: product.slug,
-                                        name: product.name,
-                                        price: product.price,
-                                        description: product.description,
-                                        created_at: product.created_at,
-                                        banner: product.banner,
-                                        item_number: product.item_number,
-                                        quantity: product.quantity,
-                                        transaction_count: product.transaction_count,
-                                        images: images,
-                                        promotions: promotions,
-                                        license: licenses[0],
-                                        category: categories
-                                    }
-                                    resolve(itemToSend)
+                                    connection.query(attributeSql, [product.id], (err, attributes) => {
+                                        if (err) return res.status(500).json({ state: 'error', message: err.message });
+
+                                        const itemToSend = {
+                                            slug: product.slug,
+                                            name: product.name,
+                                            price: product.price,
+                                            description: product.description,
+                                            created_at: product.created_at,
+                                            banner: product.banner,
+                                            item_number: product.item_number,
+                                            quantity: product.quantity,
+                                            transaction_count: product.transaction_count,
+                                            images: images,
+                                            promotions: promotions,
+                                            license: licenses[0],
+                                            category: categories,
+                                            attribute: attributes[0] || null
+                                        }
+                                        resolve(itemToSend)
+
+                                    })
                                 })
 
 
@@ -194,6 +201,7 @@ function index(req, res) {
                 .then(productListToSend => {
                     const searchOnly = req.query.searchOnly === 'true';
                     const hasFilters = name || description || category || attribute || minPrice || maxPrice || promotion;
+                    console.log(attribute, promotion);
 
                     if (searchOnly && !hasFilters) {
                         return res.json({
