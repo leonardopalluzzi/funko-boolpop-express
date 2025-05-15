@@ -15,14 +15,16 @@ function index(req, res) {
     const description = req.query.description || '';
     const category = req.query.category || '';
     const attribute = req.query.attribute || '';
-    const minPrice = Number(req.query.minPrice) || 0;
-    const maxPrice = Number(req.query.maxPrice) || 0;
+    const minPrice = Number(req.query.minPrice);
+    const maxPrice = Number(req.query.maxPrice);
     const promotion = req.query.promotion || '';
 
     const filters = [];
     const values = [];
-    console.log(sortBySales, req.query.sales);
-    console.log(dateSort);
+
+    console.log(maxPrice, minPrice);
+    console.log(req.query.minPrice, req.query.maxPrice);
+
     // Validazioni
     if (typeof name !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid name parameter' });
     if (typeof description !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid description parameter' });
@@ -92,18 +94,7 @@ function index(req, res) {
 
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
-    let priceOrderClause =
-        sortBySales === 1
-            ? 'ORDER BY total_quantity_sold DESC'
-            : sortBySales === - 1
-                ? 'ORDER BY total_quantity_sold ASC'
-                : (minPrice || maxPrice)
-                    ? 'ORDER BY p.price ASC'
-                    : sortByPrice === 1
-                        ? 'ORDER BY p.price ASC'
-                        : sortByPrice === -1
-                            ? 'ORDER BY p.price DESC'
-                            : '';
+    let priceOrderClause = ''
 
     if (sortBySales) {
         priceOrderClause =
@@ -120,12 +111,12 @@ function index(req, res) {
                                 : '';
     } else {
         priceOrderClause =
-            (minPrice || maxPrice)
-                ? 'ORDER BY p.price ASC'
+            (minPrice !== 0 || maxPrice !== 1000)
+                ? 'ORDER BY p.price'
                 : sortByPrice === 1
-                    ? 'ORDER BY p.price ASC'
+                    ? 'ORDER BY p.price'
                     : sortByPrice === -1
-                        ? 'ORDER BY p.price DESC'
+                        ? 'ORDER BY p.price'
                         : '';
     }
 
