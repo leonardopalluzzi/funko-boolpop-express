@@ -74,6 +74,7 @@ function store(req, res) {
                                     ${JSON.stringify(productList)}
 
                                     When you reply, provide ONLY a valid JSON, which should be an ARRAY of objects with the following properties:
+                                    - slug (string)
                                     - name (string)
                                     - description (string)
                                     - price (number)
