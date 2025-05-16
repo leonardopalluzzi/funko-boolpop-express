@@ -30,7 +30,7 @@ function store(req, res) {
     const userMessage = req.body.message;
 
     const textSql = 'SELECT p.name, p.price, p.created_at, p.quantity FROM products p'; //fare JOIN per avere info anche su transazioni ecc..
-    const jsonSql = 'SELECT p.slug, p.name, p.price, p.created_at FROM products p LIMIT 8';
+    const jsonSql = 'SELECT p.slug, p.name, p.price FROM products p LIMIT 8';
 
     function getIntent(message) {
         const msg = message.toLowerCase();
@@ -51,22 +51,6 @@ function store(req, res) {
 
                 const productList = results.map(item => `${item.name}, price: ${item.price}, quantity: ${item.quantity}`).join('\n');
 
-                const contextTextMessage = `
-                                You are a concise and friendly virtual assistant for my FunkoPop ecommerce store.
-                                Answer in a short, clear and direct way. 
-                                Never exceed 30 words.
-                                Only answer to the user's specific question about the products below.
-                                Do not repeat the list unless explicitly requested.
-                                If the user asks something not related to these products, reply "Please check our catalog."
-                                Use a professional and essential tone. No extra info, no greetings, no repetition.
-
-                                Available products:
-                                ${productList}
-
-                                User request:
-                                ${userMessage}
-                                `;
-
                 const contextJsonMessage = `You are a virtual assistant for a FunkoPop e-commerce store.
 
                                     Here is a list of available products in JSON format:
@@ -76,7 +60,6 @@ function store(req, res) {
                                     When you reply, provide ONLY a valid JSON, which should be an ARRAY of objects with the following properties:
                                     - slug (string to lower case with - instead of spaces)
                                     - name (string)
-                                    - description (string)
                                     - price (number)
                                     - quantity (number)
 
@@ -153,27 +136,11 @@ function store(req, res) {
                                 ${userMessage}
                                 `;
 
-                const contextJsonMessage = `You are a virtual assistant for a FunkoPop e-commerce store.
-
-                                    Here is a list of available products in JSON format:
-
-                                    ${JSON.stringify(productList)}
-
-                                    When you reply, provide ONLY a valid JSON, which should be an ARRAY of objects with the following properties:
-                                    - name (string)
-                                    - description (string)
-                                    - price (number)
-                                    - quantity (number)
-
-                                    Reply with JSON only, NO additional text.
-
-                                    The customer's request is: "${userMessage}"`
-
                 fetch('http://localhost:11434/api/chat', {
                     method: 'POST',
                     body: JSON.stringify({
                         model: 'phi',
-                        messages: [{ role: 'user', content: contextJsonMessage }],
+                        messages: [{ role: 'user', content: contextTextMessage }],
                         stream: false
                     }),
                     headers: { 'Content-Type': 'application/json' }
