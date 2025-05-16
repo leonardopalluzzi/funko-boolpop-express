@@ -3,7 +3,9 @@ const connection = require('../db/db');
 
 function index(req, res) {
     const slug = req.query.slug
-    const limit = Number(req.query.limit) || 4;
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 5;
+    const offset = (page - 1) * limit;
 
 
     const getAttributesSql = `
@@ -27,6 +29,31 @@ function index(req, res) {
               AND p.slug != ?
             LIMIT ?
         `;
+
+        const countSql = `
+                SELECT COUNT(*) AS total
+                FROM (
+                    SELECT p.id
+                    FROM products p
+                    JOIN categories c ON p.categories_id = c.id
+                    LEFT JOIN product_transaction pt ON pt.product_id = p.id
+                    LEFT JOIN product_attribute pa ON pa.products_id = p.id
+                    LEFT JOIN attributes a ON pa.attributes_id = a.id
+                    LEFT JOIN promotions ON p.promotions_id = promotions.id
+                    GROUP BY p.id
+                ) AS filtered;
+            `;
+        // Query per la paginazione
+        connection.query(countSql, (err, countResults) => {
+            if (err) return res.status(500).json({ state: 'error', message: err.message });
+
+
+            const total = countResults[0].total;
+            const totalPages = Math.ceil(total / limit);
+
+
+        })
+
 
         connection.query(recommendedSql, [...attrIds, slug, limit], (err, products) => {
             if (err) return res.status(500).json({ state: 'error', message: err.message });
