@@ -36,6 +36,8 @@ function store(req, res) {
     priceArr.forEach(item => {
         total = total + item
     })
+    console.log(`totale matto: ${total}`);
+
 
 
     function getCurrentMySQLDateTime() {
@@ -53,10 +55,15 @@ function store(req, res) {
     const currentDate = getCurrentMySQLDateTime()
     req.body.created_at = currentDate
 
-    const { products_info, username, useremail, amount, status, stripe_payment_id, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap } = req.body
+    const { products_info, username, useremail, amount, shipping, status, stripe_payment_id, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap } = req.body
+
+    console.log(amount);
+
+    const frontAmount = amount + shipping;
+    const trueAmount = total + shipping
 
     if (!useremail) return res.status(400).json({ state: 'error', message: 'email required' });
-    if (Number(amount.toFixed(2)) !== Number(total.toFixed(2))) return res.status(400).json({ state: 'error', message: 'error in defining amount' })
+    if (Number(frontAmount.toFixed(2)) !== Number(trueAmount.toFixed(2))) return res.status(400).json({ state: 'error', message: 'error in defining amount' })
 
 
     const values = [username, useremail, amount, status, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap]
@@ -140,7 +147,7 @@ function store(req, res) {
                 }
                 //creo payment intent
                 return stripe.paymentIntents.create({
-                    amount: Math.round(total * 100),
+                    amount: Math.round(trueAmount * 100),
                     currency: 'eur',
                     receipt_email: useremail,
                     metadata: {
@@ -148,8 +155,8 @@ function store(req, res) {
                         transaction_id: transactionId,
                         email: useremail,
                         usefirst_name: username,
-                        amount: amount,
-                        shipping: 10
+                        amount: trueAmount,
+                        shipping: amount > 50 ? 0 : 5
                     },
                 })
 
