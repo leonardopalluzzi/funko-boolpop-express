@@ -1,4 +1,10 @@
 const connection = require('../db/db');
+const http = require('http');
+
+const fakeProducts = [
+    { name: 'Funko Batman', price: 25, category: 'supereroi' },
+    { name: 'Funko Harry Potter', price: 30, category: 'fantasy' }
+];
 
 function index(req, res) {
 
@@ -10,38 +16,26 @@ function show(req, res) {
 
 function store(req, res) {
 
-    //funzione esempio presa dal chattone con ollama o phi2
     const userMessage = req.body.message;
 
-    const postData = JSON.stringify({
-        model: 'phi',
-        messages: [{ role: 'user', content: userMessage }],
-        stream: false
-    });
-
-    const options = {
-        hostname: 'localhost',
-        port: 11434,
-        path: '/api/chat',
+    // Chiamata API OpenAI senza async/await, con promise
+    fetch('http://localhost:11434/api/chat', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': postData.length
-        }
-    };
-
-    const request = http.request(options, function (response) {
-        let data = '';
-        response.on('data', chunk => data += chunk);
-        response.on('end', () => {
-            const reply = JSON.parse(data)?.message?.content || 'Nessuna risposta';
-            res.json({ reply: reply });
+        body: JSON.stringify({
+            model: 'phi',
+            messages: [{ role: 'user', content: userMessage }],
+            stream: false
+        }),
+        headers: { 'Content-Type': 'application/json' }
+    })
+        .then(resp => resp.json())
+        .then(data => {
+            res.json({ reply: data.message?.content || data.response || 'Nessuna risposta dal modello.' });
+        })
+        .catch(err => {
+            console.error('Errore chiamata Ollama:', err);
+            res.status(500).json({ error: 'Errore nella risposta del chatbot' });
         });
-    });
-
-    request.on('error', error => res.status(500).json({ error: error.message }));
-    request.write(postData);
-    request.end();
 
 }
 

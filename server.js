@@ -28,7 +28,7 @@ app.use(express.static('./public'))
 // Endpoint
 app.use('/api/v1/funkoboolpop', productRouter)
 app.use('/api/v1/transactions', transactionRouter)
-app.use('api/v1/chatbot', chatRouter)
+app.use('/api/v1/chatbot', chatRouter)
 
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
