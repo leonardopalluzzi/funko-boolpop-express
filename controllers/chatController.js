@@ -32,12 +32,26 @@ function store(req, res) {
     const textSql = 'SELECT p.name, p.price, p.created_at, p.quantity FROM products p'; //fare JOIN per avere info anche su transazioni ecc..
     const jsonSql = 'SELECT * FROM products LIMIT 8';
 
-    connection.query(jsonSql, (err, results) => {
-        if (err) return res.status(500).json({ state: 'error', message: err.message });
+    function getIntent(message) {
+        const msg = message.toLowerCase();
+        if (msg.includes('price') || msg.includes('products') || msg.includes('list')) return 'json';
+        if (msg.includes('description') || msg.includes('info')) return 'text';
+        return 'default';
+    }
 
-        const productList = results.map(item => `${item.name}, price: ${item.price}, quantity: ${item.quantity}`).join('\n');
+    const intent = getIntent(userMessage)
 
-        const contextTextMessage = `
+
+
+    switch (intent) {
+        case 'json':
+            //fai sql che da json
+            connection.query(jsonSql, (err, results) => {
+                if (err) return res.status(500).json({ state: 'error', message: err.message });
+
+                const productList = results.map(item => `${item.name}, price: ${item.price}, quantity: ${item.quantity}`).join('\n');
+
+                const contextTextMessage = `
                                 You are a concise and friendly virtual assistant for my FunkoPop ecommerce store.
                                 Answer in a short, clear and direct way. 
                                 Never exceed 30 words.
@@ -53,7 +67,7 @@ function store(req, res) {
                                 ${userMessage}
                                 `;
 
-        const contextJsonMessage = `You are a virtual assistant for a FunkoPop e-commerce store.
+                const contextJsonMessage = `You are a virtual assistant for a FunkoPop e-commerce store.
 
                                     Here is a list of available products in JSON format:
 
@@ -69,131 +83,123 @@ function store(req, res) {
 
                                     The customer's request is: "${userMessage}"`
 
-        fetch('http://localhost:11434/api/chat', {
-            method: 'POST',
-            body: JSON.stringify({
-                model: 'phi',
-                messages: [{ role: 'user', content: contextJsonMessage }],
-                stream: false
-            }),
-            headers: { 'Content-Type': 'application/json' }
-        })
-            .then(resp => resp.json())
-            .then(data => {
+                fetch('http://localhost:11434/api/chat', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        model: 'phi',
+                        messages: [{ role: 'user', content: contextJsonMessage }],
+                        stream: false
+                    }),
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                    .then(resp => resp.json())
+                    .then(data => {
 
 
-                //codice per ottenere json
-                const content = data.message?.content || '';
+                        //codice per ottenere json
+                        const content = data.message?.content || '';
 
-                try {
-                    // Proviamo a parsare la risposta come JSON
-                    const jsonReply = JSON.parse(content);
-                    res.json({ reply: jsonReply });
-                } catch (err) {
+                        try {
+                            // Proviamo a parsare la risposta come JSON
+                            const jsonReply = JSON.parse(content);
+                            res.json({ reply: jsonReply });
+                        } catch (err) {
 
-                    const cleaned = content
-                        .replace(/[\n\r]/g, '')
-                        .replace(/[{}]/g, '')
-                        .split(',')
-                        .map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
-
-
-                    // Se fallisce, fallback a stringa semplice
-                    if (cleaned.length > 0) {
-                        const fallback = cleaned.map(name => ({ name }));
-                        res.json({ error: "not-a-json-fallback", raw: shortenAnswer(data.message?.content, 30) });
-                    } else {
-                        res.json({ error: "not-a-json-failed", raw: shortenAnswer(data.message?.content, 30) });
-                    }
-
-                }
+                            const cleaned = content
+                                .replace(/[\n\r]/g, '')
+                                .replace(/[{}]/g, '')
+                                .split(',')
+                                .map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
 
 
-                // codice per ottenere risposte testuali
-                // let reply = data.message?.content || data.response || 'Nessuna risposta dal modello.';
+                            // Se fallisce, fallback a stringa semplice
+                            if (cleaned.length > 0) {
+                                const fallback = cleaned.map(name => ({ name }));
+                                res.json({ error: "not-a-json-fallback", raw: shortenAnswer(data.message?.content, 30) });
+                            } else {
+                                res.json({ error: "not-a-json-failed", raw: shortenAnswer(data.message?.content, 30) });
+                            }
 
-                // // regex per togliere merdate ai
-                // reply = reply.replace(/As an AI.*?\./gi, '').trim();
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Errore chiamata Ollama:', err);
+                        res.status(500).json({ error: 'Errore nella risposta del chatbot' });
+                    });
 
-                // // pulisce gli /n e accorcia risposta
-                // reply = shortenAnswer(reply, 30)
-
-                // res.json({ reply });
             })
-            .catch(err => {
-                console.error('Errore chiamata Ollama:', err);
-                res.status(500).json({ error: 'Errore nella risposta del chatbot' });
-            });
+            break;
+        case 'text':
+            //fai sql text
+            connection.query(textSql, (err, results) => {
+                if (err) return res.status(500).json({ state: 'error', message: err.message });
 
+                const productList = results.map(item => `${item.name}, price: ${item.price}, quantity: ${item.quantity}`).join('\n');
 
+                const contextTextMessage = `
+                                You are a concise and friendly virtual assistant for my FunkoPop ecommerce store.
+                                Answer in a short, clear and direct way. 
+                                Never exceed 30 words.
+                                Only answer to the user's specific question about the products below.
+                                Do not repeat the list unless explicitly requested.
+                                If the user asks something not related to these products, reply "Please check our catalog."
+                                Use a professional and essential tone. No extra info, no greetings, no repetition.
 
+                                Available products:
+                                ${productList}
 
+                                User request:
+                                ${userMessage}
+                                `;
 
+                const contextJsonMessage = `You are a virtual assistant for a FunkoPop e-commerce store.
 
-        /*metodo con http*/
+                                    Here is a list of available products in JSON format:
 
-        // const postData = JSON.stringify({
-        //     model: 'phi',
-        //     messages: [{ role: 'user', content: contextMessage }],
-        //     stream: false
-        // });
+                                    ${JSON.stringify(productList)}
 
-        // const options = {
-        //     hostname: 'localhost',
-        //     port: 11434,
-        //     path: '/api/chat',
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //         'Content-Length': Buffer.byteLength(postData)
-        //     }
-        // };
+                                    When you reply, provide ONLY a valid JSON, which should be an ARRAY of objects with the following properties:
+                                    - name (string)
+                                    - description (string)
+                                    - price (number)
+                                    - quantity (number)
 
+                                    Reply with JSON only, NO additional text.
 
+                                    The customer's request is: "${userMessage}"`
 
-        // usare una chiamata httppermette di gestire la response dell'ai piu nel dettaglio ma usare il fetch e praticamente lo stesso
-        // const request = http.request(options, (response) => { //faccio richeista http a ollama
-        //     let data = ''; //prepraro variabile d'appoggio per la response
+                fetch('http://localhost:11434/api/chat', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        model: 'phi',
+                        messages: [{ role: 'user', content: contextJsonMessage }],
+                        stream: false
+                    }),
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                    .then(resp => resp.json())
+                    .then(data => {
 
-        //     response.on('data', chunk => { //salvo la prima response
-        //         data += chunk;
-        //     });
+                        // codice per ottenere risposte testuali
+                        let reply = data.message?.content || data.response || 'Nessuna risposta dal modello.';
 
-        //     response.on('end', () => { //creo in end la response finale da parsare, se non trova nulla risponde con una callback
-        //         try {
-        //             const parsed = JSON.parse(data);
-        //             res.json({ reply: parsed.message?.content || parsed.response || 'Nessuna risposta dal modello.' });
-        //         } catch (e) {       //gestione errori con try catch
-        //             console.error('Errore parsing:', e);
-        //             res.status(500).json({ error: 'Risposta non valida dal modello' });
-        //         }
-        //     });
-        // });
+                        // regex per togliere merdate ai
+                        reply = reply.replace(/As an AI.*?\./gi, '').trim();
 
-        // //gestione errori nella richiesta ad ollama
-        // request.on('error', (e) => {
-        //     console.error('Errore richiesta Ollama:', e);
-        //     res.status(500).json({ error: 'Errore richiesta LLM' });
-        // });
+                        // pulisce gli /n e accorcia risposta
+                        reply = shortenAnswer(reply, 30)
 
-        // //rewrite della resposnse
-        // request.write(postData);
-        // // fa terminare la richiesta
-        // request.end();
-
-
-
-        // vecchia chiamata (funzionante)
-
-
-
-
-
-
-    })
-
-
-
+                        res.json({ reply });
+                    })
+                    .catch(err => {
+                        console.error('Errore chiamata Ollama:', err);
+                        res.status(500).json({ error: 'Errore nella risposta del chatbot' });
+                    });
+            })
+            break;
+        case 'default':
+        // definire un case default
+    }
 }
 
 function update(req, res) {
