@@ -7,10 +7,10 @@ function index(req, res) {
     const limit = parseInt(req.query.limit) || 4;
     const offset = (page - 1) * limit;
 
-    console.log(slug);
+    console.log(page);
 
 
-    // Recupero il prodotto di partenza con category e license dirette
+
     const countSql = `
 SELECT COUNT(DISTINCT p2.id) AS total
 FROM products p1
@@ -31,7 +31,7 @@ AND (
 )
 `;
 
-    // Query paginata
+
     const paginatedSql = `
 SELECT DISTINCT p2.*
 FROM products p1
