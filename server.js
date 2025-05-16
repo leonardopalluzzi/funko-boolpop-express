@@ -10,9 +10,10 @@ const chatRouter = require('./routers/chatRouter')
 
 //middleware per cors
 app.use(cors(
-    {
-        origin: process.env.FRONT_URL
-    }
+    // {
+    //     origin: process.env.FRONT_URL,
+    //     methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH']
+    // }
 ));
 
 app.use((req, res, next) => {
@@ -23,6 +24,7 @@ app.use((req, res, next) => {
     }
 });
 
+
 // app.use(express.json())
 
 app.use(express.static('./public'))
@@ -32,6 +34,8 @@ app.use('/api/v1/funkoboolpop', productRouter)
 app.use('/api/v1/transactions', transactionRouter)
 app.use('/api/v1/recommended', recommendedRouter)
 app.use('/api/v1/chatbot', chatRouter)
+
+
 
 
 app.listen(port, () => {

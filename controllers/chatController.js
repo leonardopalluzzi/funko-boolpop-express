@@ -28,9 +28,11 @@ function show(req, res) {
 function store(req, res) {
 
     const userMessage = req.body.message;
+    console.log(userMessage);
+
 
     const textSql = 'SELECT p.name, p.price, p.created_at, p.quantity FROM products p'; //fare JOIN per avere info anche su transazioni ecc..
-    const jsonSql = 'SELECT p.slug, p.name, p.price FROM products p LIMIT 8';
+    const jsonSql = 'SELECT p.slug, p.name, p.price, p.quantity FROM products p LIMIT 8';
 
     function getIntent(message) {
         const msg = message.toLowerCase();
@@ -76,7 +78,7 @@ function store(req, res) {
                     }),
                     headers: { 'Content-Type': 'application/json' }
                 })
-                    .then(resp => resp.json())
+                    .then(res => res.json())
                     .then(data => {
 
 
@@ -86,7 +88,7 @@ function store(req, res) {
                         try {
                             // Proviamo a parsare la risposta come JSON
                             const jsonReply = JSON.parse(content);
-                            res.json({ reply: jsonReply });
+                            res.json({ state: 'json', results: jsonReply });
                         } catch (err) {
 
                             const cleaned = content
@@ -99,9 +101,9 @@ function store(req, res) {
                             // Se fallisce, fallback a stringa semplice
                             if (cleaned.length > 0) {
                                 const fallback = cleaned.map(name => ({ name }));
-                                res.json({ error: "not-a-json-fallback", raw: shortenAnswer(data.message?.content, 30) });
+                                res.json({ state: "not-a-json-fallback", results: shortenAnswer(data.message?.content, 30) });
                             } else {
-                                res.json({ error: "not-a-json-failed", raw: shortenAnswer(data.message?.content, 30) });
+                                res.json({ state: "not-a-json-failed", results: shortenAnswer(data.message?.content, 30) });
                             }
 
                         }
@@ -143,7 +145,8 @@ function store(req, res) {
                         messages: [{ role: 'user', content: contextTextMessage }],
                         stream: false
                     }),
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    // timeout: 5000
                 })
                     .then(resp => resp.json())
                     .then(data => {
@@ -157,7 +160,7 @@ function store(req, res) {
                         // pulisce gli /n e accorcia risposta
                         reply = shortenAnswer(reply, 30)
 
-                        res.json({ reply });
+                        res.json({ state: 'text', results: reply });
                     })
                     .catch(err => {
                         console.error('Errore chiamata Ollama:', err);
@@ -166,7 +169,8 @@ function store(req, res) {
             })
             break;
         case 'default':
-        // definire un case default
+            res.status(400).json({ error: 'Invalid intent or unsupported request.' });
+            break;
     }
 }
 
