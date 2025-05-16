@@ -74,7 +74,7 @@ function store(req, res) {
                                     ${JSON.stringify(productList)}
 
                                     When you reply, provide ONLY a valid JSON, which should be an ARRAY of objects with the following properties:
-                                    - slug (string)
+                                    - slug (string to lower case with - instead of spaces)
                                     - name (string)
                                     - description (string)
                                     - price (number)
@@ -124,8 +124,8 @@ function store(req, res) {
                         }
                     })
                     .catch(err => {
-                        console.error('Errore chiamata Ollama:', err);
-                        res.status(500).json({ error: 'Errore nella risposta del chatbot' });
+                        console.error('ollama error:', err);
+                        res.status(500).json({ error: 'error in chatbot response' });
                     });
 
             })
