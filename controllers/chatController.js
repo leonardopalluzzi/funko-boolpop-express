@@ -30,7 +30,7 @@ function store(req, res) {
     const userMessage = req.body.message;
 
     const textSql = 'SELECT p.name, p.price, p.created_at, p.quantity FROM products p'; //fare JOIN per avere info anche su transazioni ecc..
-    const jsonSql = 'SELECT * FROM products LIMIT 8';
+    const jsonSql = 'SELECT p.slug, p.name, p.price, p.created_at FROM products p LIMIT 8';
 
     function getIntent(message) {
         const msg = message.toLowerCase();
