@@ -208,7 +208,6 @@ function index(req, res) {
         ${orderClause}
         LIMIT ? OFFSET ?
     `;
-    console.log(productSql, values);
 
     values.push(limit, offset);
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
