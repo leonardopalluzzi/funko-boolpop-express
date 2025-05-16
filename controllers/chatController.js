@@ -53,11 +53,21 @@ function store(req, res) {
                                 ${userMessage}
                                 `;
 
-        const contextJsonMessage = `Tou are my virtuala assistant and tou have to answer with a JSON to the user request. here is the list of available products in JSON format:
-                                    ${JSON.stringify(productList)} 
+        const contextJsonMessage = `You are a virtual assistant for a FunkoPop e-commerce store.
 
-                                    anwer only with a json that includes anly the products that are relevant to the user request:
-                                    ${userMessage}`
+                                    Here is a list of available products in JSON format:
+
+                                    ${JSON.stringify(productList)}
+
+                                    When you reply, provide ONLY a valid JSON, which should be an ARRAY of objects with the following properties:
+                                    - name (string)
+                                    - description (string)
+                                    - price (number)
+                                    - quantity (number)
+
+                                    Reply with JSON only, NO additional text.
+
+                                    The customer's request is: "${userMessage}"`
 
         fetch('http://localhost:11434/api/chat', {
             method: 'POST',
@@ -71,20 +81,32 @@ function store(req, res) {
             .then(resp => resp.json())
             .then(data => {
 
+
                 //codice per ottenere json
-                let jsonReply;
+                const content = data.message?.content || '';
 
                 try {
                     // Proviamo a parsare la risposta come JSON
-                    jsonReply = JSON.parse(data.message?.content);
-                } catch {
+                    const jsonReply = JSON.parse(content);
+                    res.json({ reply: jsonReply });
+                } catch (err) {
+
+                    const cleaned = content
+                        .replace(/[\n\r]/g, '')
+                        .replace(/[{}]/g, '')
+                        .split(',')
+                        .map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
+
+
                     // Se fallisce, fallback a stringa semplice
-                    jsonReply = { error: "not-a-json", raw: data.message?.content };
+                    if (cleaned.length > 0) {
+                        const fallback = cleaned.map(name => ({ name }));
+                        res.json({ error: "not-a-json-fallback", raw: shortenAnswer(data.message?.content, 30) });
+                    } else {
+                        res.json({ error: "not-a-json-failed", raw: shortenAnswer(data.message?.content, 30) });
+                    }
+
                 }
-
-                res.json({ reply: jsonReply });
-
-
 
 
                 // codice per ottenere risposte testuali
