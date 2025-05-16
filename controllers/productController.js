@@ -7,6 +7,7 @@ function index(req, res) {
     let dateSort = Number(req.query.date);
     let sortBySales = Number(req.query.sales);
     const sortByPrice = Number(req.query.price);
+    let sortByName = req.query.sortByName;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
     const offset = (page - 1) * limit;
@@ -41,6 +42,14 @@ function index(req, res) {
         if (dateSort !== 1) {
             if (dateSort !== -1) {
                 return res.status(400).json({ state: 'error', message: 'Invalid date parameter' });
+            }
+        }
+    }
+
+    if (sortByName) {
+        if (sortByName !== 'asc') {
+            if (sortByName !== 'desc') {
+                return res.status(400).json({ state: 'error', message: 'Invalid name parameter' })
             }
         }
     }
@@ -86,49 +95,85 @@ function index(req, res) {
 
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
-    let priceOrderClause = ''
-
-    if (sortBySales) {
-        priceOrderClause =
-            sortBySales === 1
-                ? 'ORDER BY total_quantity_sold DESC'
-                : sortBySales === - 1
-                    ? 'ORDER BY total_quantity_sold ASC'
-                    : (minPrice || maxPrice)
-                        ? 'ORDER BY p.price ASC'
-                        : sortByPrice === 1
+    /*     let priceOrderClause = ''
+    
+        if (sortBySales) {
+            priceOrderClause =
+                sortBySales === 1
+                    ? 'ORDER BY total_quantity_sold DESC'
+                    : sortBySales === - 1
+                        ? 'ORDER BY total_quantity_sold ASC'
+                        : (minPrice || maxPrice)
                             ? 'ORDER BY p.price ASC'
-                            : sortByPrice === -1
-                                ? 'ORDER BY p.price DESC'
-                                : '';
-    } else {
-        priceOrderClause =
-            (minPrice !== 0 || maxPrice !== 1000)
-                ? 'ORDER BY p.price'
-                : sortByPrice === 1
+                            : sortByPrice === 1
+                                ? 'ORDER BY p.price ASC'
+                                : sortByPrice === -1
+                                    ? 'ORDER BY p.price DESC'
+                                    : '';
+        } else {
+            priceOrderClause =
+                (minPrice !== 0 || maxPrice !== 1000)
                     ? 'ORDER BY p.price'
-                    : sortByPrice === -1
+                    : sortByPrice === 1
                         ? 'ORDER BY p.price'
-                        : '';
+                        : sortByPrice === -1
+                            ? 'ORDER BY p.price'
+                            : '';
+        }
+    
+    
+        let dateOrderClause = ''
+    
+        if (priceOrderClause !== '') {
+            dateOrderClause = dateSort === 1
+                ? ', p.created_at DESC'
+                : dateSort === -1
+                    ? ', p.created_at ASC'
+                    : '';
+        } else {
+            dateOrderClause = dateSort === 1
+                ? 'ORDER BY p.created_at DESC'
+                : dateSort === -1
+                    ? 'ORDER BY p.created_at ASC'
+                    : '';
+        }
+    
+        let nameOrderClause = '';
+    
+        if (priceOrderClause.startsWith('ORDER BY') || dateOrderClause.startsWith('ORDER BY')) {
+            // Se c'è già un ORDER BY, aggiungi la virgola
+            if (sortByName === 'asc') {
+                nameOrderClause = ', p.name ASC';
+            } else if (sortByName === 'desc') {
+                nameOrderClause = ',  p.name DESC';
+            }
+        } else {
+            // Se non c'è ancora un ORDER BY
+            if (sortByName === 'asc') {
+                nameOrderClause = 'ORDER BY p.name ASC';
+            } else if (sortByName === 'desc') {
+                nameOrderClause = 'ORDER BY p.name DESC';
+            }
+        } */
+
+    let orderBy = [];
+
+    if (sortBySales === 1) orderBy.push('total_quantity_sold DESC');
+    else if (sortBySales === -1) orderBy.push('total_quantity_sold ASC');
+
+    if (sortByPrice === 1) orderBy.push('p.price ASC');
+    else if (sortByPrice === -1) orderBy.push('p.price DESC');
+
+    if (dateSort === 1) orderBy.push('p.created_at DESC');
+    else if (dateSort === -1) orderBy.push('p.created_at ASC');
+
+    if (sortByName === 'asc') orderBy.push('p.name ASC');
+    else if (sortByName === 'desc') orderBy.push('p.name DESC');
+
+    let orderClause = '';
+    if (orderBy.length > 0) {
+        orderClause = 'ORDER BY ' + orderBy.join(', ');
     }
-
-
-    let dateOrderClause = ''
-
-    if (priceOrderClause !== '') {
-        dateOrderClause = dateSort === 1
-            ? ', p.created_at DESC'
-            : dateSort === -1
-                ? ', p.created_at ASC'
-                : '';
-    } else {
-        dateOrderClause = dateSort === 1
-            ? 'ORDER BY p.created_at DESC'
-            : dateSort === -1
-                ? 'ORDER BY p.created_at ASC'
-                : '';
-    }
-
 
 
     const countSql = `
@@ -152,7 +197,8 @@ function index(req, res) {
     const productSql = `
         SELECT 
             p.*, 
-            COALESCE(SUM(pt.quantity), 0) AS total_quantity_sold
+            COALESCE(SUM(pt.quantity), 0) AS total_quantity_sold, promotions.discount,
+            ROUND(p.price - (p.price * promotions.discount) / 100, 2) AS discounted_price
         FROM products p
         JOIN categories c ON p.categories_id = c.id
         LEFT JOIN product_transaction pt ON pt.product_id = p.id
@@ -161,9 +207,10 @@ function index(req, res) {
         LEFT JOIN promotions ON p.promotions_id = promotions.id
         ${whereClause}
         GROUP BY p.id
-        ${priceOrderClause}${dateOrderClause}
+        ${orderClause}
         LIMIT ? OFFSET ?
     `;
+    console.log(productSql, values);
 
     values.push(limit, offset);
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
@@ -219,7 +266,8 @@ function index(req, res) {
                                             promotions: promotions,
                                             license: licenses[0],
                                             category: categories,
-                                            attribute: attributes
+                                            attribute: attributes,
+                                            discounted_price: product.discounted_price
                                         }
                                         resolve(itemToSend)
 
@@ -236,7 +284,7 @@ function index(req, res) {
             Promise.all(productListToSend)
                 .then(productListToSend => {
                     const searchOnly = req.query.searchOnly === 'true';
-                    const hasFilters = name || description || category || attribute || minPrice || maxPrice || promotion || sortByPrice || sortBySales || dateSort;
+                    const hasFilters = name || description || category || attribute || minPrice || maxPrice || promotion || sortByPrice || sortBySales || dateSort || sortByName;
 
                     if (searchOnly && !hasFilters) {
                         return res.json({
