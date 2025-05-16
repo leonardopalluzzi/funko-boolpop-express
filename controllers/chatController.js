@@ -30,7 +30,7 @@ function store(req, res) {
     const userMessage = req.body.message;
 
     const textSql = 'SELECT p.name, p.price, p.created_at, p.quantity FROM products p'; //fare JOIN per avere info anche su transazioni ecc..
-    const jsonSql = 'SELECT * FROM products';
+    const jsonSql = 'SELECT * FROM products LIMIT 8';
 
     connection.query(jsonSql, (err, results) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
