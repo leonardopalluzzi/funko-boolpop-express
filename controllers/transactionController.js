@@ -67,6 +67,23 @@ function store(req, res) {
     const recoverProdIdSql = 'SELECT products.id AS pId, products.name AS name, products.price AS price FROM products WHERE products.slug = ?'
     const updatePivotSql = 'INSERT INTO product_transaction (product_id, transaction_id, quantity) VALUES (?, ?, ?)'
 
+
+
+    /* const selectQuantitySql = `SELECT quantity FROM products WHERE id = ?`
+
+    const checkQuantities = cart.map(item => {
+        return new Promise((resolve, reject) => {
+            connection.query(selectQuantitySql, [item.product_id], (err, results) => {
+                if (err) return reject(err);
+                if (!results.length || results[0].quantity < item.cartQuantity) {
+                    return reject(new Error(`Prodotto non disponibile in quantitá richiesta`))
+                }
+                resolve()
+            })
+        })
+    })
+    Promise.all(checkQuantities) */
+
     connection.query(saveIntentSql, values, (err, results) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
         const transactionId = results.insertId
@@ -200,7 +217,7 @@ function payment(req, res) {
 
         //aggiornare db
         const updateDbSql = 'UPDATE transactions SET status = ? WHERE transactions.stripe_payment_id = ?'
-        const updateQuantitySql = 'UPDATE products SET quantity = quantity - ? WHERE products.id = ?'
+        const updateQuantitySql = 'UPDATE products SET quantity = quantity - ? WHERE products.id = ? AND quantity >= ?'
         pIds.forEach(item => {
             console.log(item.product_quantity);
 
