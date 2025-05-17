@@ -144,19 +144,7 @@ Output ONLY JSON. NEVER add notes.
 
                         } else {
 
-                            const cleaned = content
-                                .replace(/[\n\r]/g, '')
-                                .replace(/[{}]/g, '')
-                                .split(',')
-                                .map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
-
-
-                            // Se fallisce, fallback a stringa semplice
-                            if (cleaned.length > 0) {
-                                const fallback = cleaned.map(name => ({ name }));
-                                res.json({ state: "not-a-json-fallback", results: shortenAnswer(data.message?.content, 30) });
-                            } else {
-                                const fallbackTextPrompt = `
+                            const fallbackTextPrompt = `
                                                             You are an e-commerce assistant.
                                                             The user's request did not return valid JSON results.
                                                             Provide a short, clear response in plain English (max 100 characters), without any extra formatting.
@@ -166,28 +154,27 @@ Output ONLY JSON. NEVER add notes.
                                                             ${userMessage}
                                                             `;
 
-                                fetch('http://localhost:11434/api/chat', {
-                                    method: 'POST',
-                                    body: JSON.stringify({
-                                        model: 'mistral',
-                                        messages: [{ role: 'user', content: fallbackTextPrompt }],
-                                        stream: false
-                                    }),
-                                    headers: { 'Content-Type': 'application/json' }
-                                })
-                                    .then(fallbackResp => fallbackResp.json())
-                                    .then(fallbackData => {
-                                        let reply = fallbackData.message?.content || 'Nessuna risposta.';
-                                        reply = reply.replace(/[\n\r]/g, ' ').trim();
-                                        reply = shortenAnswer(reply, 100);
+                            fetch('http://localhost:11434/api/chat', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    model: 'mistral',
+                                    messages: [{ role: 'user', content: fallbackTextPrompt }],
+                                    stream: false
+                                }),
+                                headers: { 'Content-Type': 'application/json' }
+                            })
+                                .then(fallbackResp => fallbackResp.json())
+                                .then(fallbackData => {
+                                    let reply = fallbackData.message?.content || 'Nessuna risposta.';
+                                    reply = reply.replace(/[\n\r]/g, ' ').trim();
+                                    reply = shortenAnswer(reply, 100);
 
-                                        res.json({ state: 'text', results: reply });
-                                    })
-                                    .catch(err => {
-                                        console.error('Errore fallback Ollama:', err);
-                                        res.status(500).json({ error: 'Errore nella generazione fallback testuale' });
-                                    });
-                            }
+                                    res.json({ state: 'text', results: reply });
+                                })
+                                .catch(err => {
+                                    console.error('Errore fallback Ollama:', err);
+                                    res.status(500).json({ error: 'Errore nella generazione fallback testuale' });
+                                });
 
                         }
                     })
@@ -252,8 +239,40 @@ Output ONLY JSON. NEVER add notes.
             })
             break;
         case 'default':
-            res.status(400).json({ error: 'Invalid intent or unsupported request.' });
-            break;
+            const fallbackDefaultPrompt = `
+                                                            You are an e-commerce assistant.
+                                                            we cxoudn't understand the intent of the user's request.
+                                                            Try to understand it yourself and working on the data-set provided try to provide a short, clear response in plain English (max 100 characters), without any extra formatting.
+                                                            Be concise and suggest what the user might be looking for or offer an alternative.
+
+                                                            data set:
+                                                            ${productList}
+
+                                                            User question:
+                                                            ${userMessage}
+                                                            `;
+
+            fetch('http://localhost:11434/api/chat', {
+                method: 'POST',
+                body: JSON.stringify({
+                    model: 'mistral',
+                    messages: [{ role: 'user', content: fallbackTextPrompt }],
+                    stream: false
+                }),
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(fallbackResp => fallbackResp.json())
+                .then(fallbackData => {
+                    let reply = fallbackData.message?.content || 'Nessuna risposta.';
+                    reply = reply.replace(/[\n\r]/g, ' ').trim();
+                    reply = shortenAnswer(reply, 100);
+
+                    res.json({ state: 'text', results: reply });
+                })
+                .catch(err => {
+                    console.error('Errore fallback Ollama:', err);
+                    res.status(500).json({ error: 'Errore nella generazione fallback testuale' });
+                });
     }
 }
 
