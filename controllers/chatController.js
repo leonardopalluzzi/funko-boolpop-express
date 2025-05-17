@@ -43,6 +43,21 @@ function store(req, res) {
 
     const intent = getIntent(userMessage)
 
+    function extractJsonArray(rawContent) {
+        const jsonStart = rawContent.indexOf('[');
+        const jsonEnd = rawContent.lastIndexOf(']');
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+            const jsonString = rawContent.slice(jsonStart, jsonEnd + 1).trim();
+            try {
+                return JSON.parse(jsonString);
+            } catch (err) {
+                console.error('JSON extraction failed:', err);
+                return null;
+            }
+        }
+        return null;
+    }
+
 
 
     switch (intent) {
@@ -53,7 +68,7 @@ function store(req, res) {
 
                 const productList = results.map(item => `${item.name}, price: ${item.price}, quantity: ${item.quantity}`).join('\n');
 
-                const contextJsonMessage = `You are a virtual assistant for a FunkoPop e-commerce store.
+                const contextJsonMessage = `reply **ONLY** with a valid JSON. **DO NOT add any explenation, texts or comments before or after the JSON.**
 
                                     Here is a list of available products in JSON format:
 
@@ -84,12 +99,14 @@ function store(req, res) {
 
                         //codice per ottenere json
                         const content = data.message?.content || '';
+                        console.log(content);
+                        const parsed = extractJsonArray(content)
 
-                        try {
-                            // Proviamo a parsare la risposta come JSON
-                            const jsonReply = JSON.parse(content);
-                            res.json({ state: 'json', results: jsonReply });
-                        } catch (err) {
+                        if (parsed && Array.isArray(parsed)) {
+                            // È un JSON array valido già parsato
+                            res.json({ state: 'json', results: parsed });
+
+                        } else {
 
                             const cleaned = content
                                 .replace(/[\n\r]/g, '')
