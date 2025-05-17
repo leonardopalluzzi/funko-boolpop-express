@@ -58,6 +58,26 @@ function store(req, res) {
         return null;
     }
 
+    function validateAIResponse(response) {
+        try {
+            const data = JSON.parse(response);
+
+            if (!Array.isArray(data)) return false;
+
+            for (const item of data) {
+                if (typeof item !== 'object' || item === null) return false;
+                if (!('slug' in item) || typeof item.slug !== 'string' || item.slug.match(/[^a-z0-9\-]/)) return false;
+                if (!('name' in item) || typeof item.name !== 'string' || item.name.match(/[^\w\s\-]/)) return false;
+                if (!('price' in item) || typeof item.price !== 'number') return false;
+                if (!('quantity' in item) || !Number.isInteger(item.quantity)) return false;
+            }
+
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
 
 
     switch (intent) {
@@ -68,26 +88,41 @@ function store(req, res) {
 
                 const productList = results.map(item => `${item.name}, price: ${item.price}, quantity: ${item.quantity}`).join('\n');
 
-                const contextJsonMessage = `reply **ONLY** with a valid JSON. **DO NOT add any explenation, texts or comments before or after the JSON.**
+                const contextJsonMessage = `You are an API.  
+ONLY output a valid JSON array of objects.  
+STRICTLY follow these rules:
+1. START output with '[' and END with ']'.
+2. NEVER write explanations, NEVER add text before or after the JSON.
+3. ONLY use the provided data. NEVER invent data.
+4. If no exact match is found, return: []
 
-                                    Here is a list of available products in JSON format:
+Data available:
+${productList}
 
-                                    ${JSON.stringify(productList)}
+Expected JSON format:
+[
+  {
+    "slug": "attack-on-titan",
+    "name": "Attack on Titan",
+    "price": 9.99,
+    "quantity": 5
+  }
+]
 
-                                    When you reply, provide ONLY a valid JSON, which should be an ARRAY of objects with the following properties:
-                                    - slug (string to lower case with - instead of spaces)
-                                    - name (string)
-                                    - price (number)
-                                    - quantity (number)
+!IMPORTANT ALWAYS include all the required fields: slug, name, price, quantity.
 
-                                    Reply with JSON only, NO additional text.
+QUERY:
+"${userMessage}"
 
-                                    The customer's request is: "${userMessage}"`
+IMPORTANT:
+If you output ANYTHING outside JSON format, the system will ERROR.
+Output ONLY JSON. NEVER add notes.
+`
 
                 fetch('http://localhost:11434/api/chat', {
                     method: 'POST',
                     body: JSON.stringify({
-                        model: 'phi',
+                        model: 'mistral',
                         messages: [{ role: 'user', content: contextJsonMessage }],
                         stream: false
                     }),
@@ -120,7 +155,37 @@ function store(req, res) {
                                 const fallback = cleaned.map(name => ({ name }));
                                 res.json({ state: "not-a-json-fallback", results: shortenAnswer(data.message?.content, 30) });
                             } else {
-                                res.json({ state: "not-a-json-failed", results: shortenAnswer(data.message?.content, 30) });
+                                const fallbackTextPrompt = `
+                                                            You are an e-commerce assistant.
+                                                            The user's request did not return valid JSON results.
+                                                            Provide a short, clear response in plain English (max 100 characters), without any extra formatting.
+                                                            Be concise and suggest what the user might be looking for or offer an alternative.
+
+                                                            User question:
+                                                            ${userMessage}
+                                                            `;
+
+                                fetch('http://localhost:11434/api/chat', {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                        model: 'mistral',
+                                        messages: [{ role: 'user', content: fallbackTextPrompt }],
+                                        stream: false
+                                    }),
+                                    headers: { 'Content-Type': 'application/json' }
+                                })
+                                    .then(fallbackResp => fallbackResp.json())
+                                    .then(fallbackData => {
+                                        let reply = fallbackData.message?.content || 'Nessuna risposta.';
+                                        reply = reply.replace(/[\n\r]/g, ' ').trim();
+                                        reply = shortenAnswer(reply, 100);
+
+                                        res.json({ state: 'text', results: reply });
+                                    })
+                                    .catch(err => {
+                                        console.error('Errore fallback Ollama:', err);
+                                        res.status(500).json({ error: 'Errore nella generazione fallback testuale' });
+                                    });
                             }
 
                         }
