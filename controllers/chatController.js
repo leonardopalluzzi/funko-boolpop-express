@@ -86,7 +86,7 @@ function store(req, res) {
             connection.query(jsonSql, (err, results) => {
                 if (err) return res.status(500).json({ state: 'error', message: err.message });
 
-                const productList = results.map(item => `${item.name}, price: ${item.price}, quantity: ${item.quantity}`).join('\n');
+                const productList = results.map(item => `${item.name}, slug: ${item.slug}, price: ${item.price}, quantity: ${item.quantity}`).join('\n');
 
                 const contextJsonMessage = `You are an API.  
 ONLY output a valid JSON array of objects.  
