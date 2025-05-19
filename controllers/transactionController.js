@@ -228,6 +228,10 @@ function payment(req, res) {
                     return `<p>ID Prodotto: ${item.product_id} Prodotto: ${item.name}, Quantità: ${item.product_quantity}, Prezzo: ${item.price}</p>`;
                 }).join('');
 
+                const userSummary = pIds.map(item => {
+                    return `<p>Prodotto: ${item.name}, Quantità: ${item.product_quantity}, Prezzo: ${item.price}</p>`;
+                }).join('');
+
                 console.log(`questi e l'html per l'email:` + htmlItems);
                 console.log(`questi sono i dati dell'email:` + paymentIntent.metadata.email);
 
@@ -239,6 +243,8 @@ function payment(req, res) {
                     subject: 'You purchase is confirmed',
                     templateId: 'd-185cf24d10d445ef961b4729ac77f8f0',
                     dynamicTemplateData: {
+                        user_summary: userSummary,
+                        order_number: paymentIntent.metadata.transactionId,
                         first_name: paymentIntent.metadata.user_first_name,
                         email: paymentIntent.metadata.email,
                         amount: Number(paymentIntent.metadata.amount).toFixed(2),
@@ -261,6 +267,7 @@ function payment(req, res) {
                     subject: `New purchase by ${paymentIntent.metadata.user_first_name}`,
                     templateId: 'd-22cafe66b217464f90a5c2c2a33594ce',
                     dynamicTemplateData: {
+                        order_number: paymentIntent.metadata.transactionId,
                         cart: htmlItems, //sezione di html
                         first_name: paymentIntent.metadata.user_first_name, // non viene letto nell'email
                         email: paymentIntent.metadata.email,
