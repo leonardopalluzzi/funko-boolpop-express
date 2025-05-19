@@ -42,7 +42,7 @@ function store(req, res) {
     }).join('\n')
 
     const userCart = req.body.userCart
-    const stringUserCart = userCart.map(item => {
+    let stringUserCart = userCart.map(item => {
         return `Product name: ${item.name}; 
                 Product slug: ${item.slug}; Product 
                 price: ${item.price}; 
@@ -52,8 +52,13 @@ function store(req, res) {
                 Product description: ${item.description}; 
                 Product license: ${item.license}; 
                 Product available quantity: ${item.quantity}`
-    }).join('\n')
-    console.log(stringContext);
+    }).join('\n') || 'User cart is empty'
+
+    if (userCart.length == 0) {
+        stringUserCart = 'User cart is empty'
+    }
+
+    console.log(stringUserCart);
 
 
     const textSql = 'SELECT p.name, p.price, p.created_at, p.quantity FROM products p'; //fare JOIN per avere info anche su transazioni ecc..
@@ -140,7 +145,8 @@ user request: 'the request made by the user'
 your response: 'the reposnse that you gave to the'
 ${stringContext}
 
-Use the following array to know the user actual cart, and which items the user is currently interested in:
+Use the following array to know the user actual cart, and which items the user is currently interested in, Keep in mind that the cart is a different data-set from the main one and it just says which products the user has in his cart:
+User Cart:
 ${stringUserCart}
 
 !IMPORTANT ALWAYS include all the required fields: slug, name, price, quantity.
@@ -195,6 +201,7 @@ Output ONLY JSON. NEVER add notes.
                                                             ${productList}
 
                                                             Use the following array to know the user actual cart, and which items the user is currently interested in:
+                                                            User Cart:
                                                             ${stringUserCart}
 
                                                             Also use the following array of messages as context to better understand the user request. ALWAYS look at the context before answering so and try to understand if you need those infomration to better answer the user question, this array contains the last 10 messages between you and the user:
@@ -271,6 +278,7 @@ Output ONLY JSON. NEVER add notes.
                                                             ${stringContext}
 
                                                             Use the following array to know the user actual cart, and which items the user is currently interested in:
+                                                            User Cart:
                                                             ${stringUserCart}
 
                                 User request:
@@ -337,6 +345,7 @@ Output ONLY JSON. NEVER add notes.
                                                             ${stringContext}
 
                                                             Use the following array to know the user actual cart, and which items the user is currently interested in:
+                                                            User Cart:
                                                             ${stringUserCart}
 
                                                             User question:
