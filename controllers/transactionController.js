@@ -241,8 +241,9 @@ function payment(req, res) {
                     dynamicTemplateData: {
                         first_name: paymentIntent.metadata.user_first_name,
                         email: paymentIntent.metadata.email,
-                        amount: paymentIntent.metadata.amount,
-                        shipping: paymentIntent.metadata.shipping
+                        amount: Number(paymentIntent.metadata.amount).toFixed(2),
+                        shipping: Number(paymentIntent.metadata.shipping),
+                        total: `${Number((paymentIntent.metadata.amount + paymentIntent.metadata.shipping)).toFixed(2)}€`
                     }
                 }
                 sgMail
