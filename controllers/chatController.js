@@ -290,7 +290,7 @@ Output ONLY JSON. NEVER add notes.
                 fetch('http://localhost:11434/api/chat', {
                     method: 'POST',
                     body: JSON.stringify({
-                        model: 'phi',
+                        model: 'mistral',
                         messages: [{ role: 'user', content: contextTextMessage }],
                         stream: false
                     }),
