@@ -110,7 +110,7 @@ Expected JSON format:
 ]
 
 !IMPORTANT ALWAYS include all the required fields: slug, name, price, quantity.
-!IMPORTNAT ALWS resport the slug field as you find it in the following array: ${productList}
+!IMPORTNAT ALWAYS report the slug field as you find it in the following array: ${productList}
 
 QUERY:
 "${userMessage}"
