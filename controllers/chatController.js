@@ -122,6 +122,9 @@ Expected JSON format:
 ]
 
 Also use the following array of messages as context to better understand the user request, this array contains the last 10 messages between you and the user:
+the strucutre of the context is:
+user request: 'the request made by the user'
+your response: 'the reposnse that you gave to the user'
 ${stringContext}
 
 !IMPORTANT ALWAYS include all the required fields: slug, name, price, quantity.
