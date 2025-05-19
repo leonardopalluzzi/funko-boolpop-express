@@ -28,7 +28,19 @@ function show(req, res) {
 function store(req, res) {
 
     const userMessage = req.body.message;
-    console.log(userMessage);
+    const context = req.body.context;
+    const stringContext = context.map(item => {
+        if (item.role == 'user') {
+            return `user request: ${item.content.results}`
+        } else if (item.role === 'bot') {
+            if (item.content.state === 'text') {
+                return `your response: ${item.content.results}`;
+            } else if (item.content.state === 'json') {
+                return `your response: ${JSON.stringify(item.content.results, null, 2)}`;
+            }
+        }
+    }).join('\n')
+    console.log(stringContext);
 
 
     const textSql = 'SELECT p.name, p.price, p.created_at, p.quantity FROM products p'; //fare JOIN per avere info anche su transazioni ecc..
@@ -109,6 +121,9 @@ Expected JSON format:
   }
 ]
 
+Also use the following array of messages as context to better understand the user request, this array contains the last 10 messages between you and the user:
+${stringContext}
+
 !IMPORTANT ALWAYS include all the required fields: slug, name, price, quantity.
 !IMPORTNAT ALWAYS report the slug field as you find it in the following array: ${productList}
 
@@ -156,6 +171,9 @@ Output ONLY JSON. NEVER add notes.
                                                             
                                                             Additional rules:
                                                             - if something is not in the provided data-set, try to answer shortly without mentionig that the required data are not included in the data-set
+
+                                                            Also use the following array of messages as context to better understand the user request, this array contains the last 10 messages between you and the user:
+                                                            ${stringContext}
 
                                                             User question:
                                                             ${userMessage}
@@ -218,6 +236,9 @@ Output ONLY JSON. NEVER add notes.
                                 Available products:
                                 ${productList}
 
+                                Also use the following array of messages as context to better understand the user request, this array contains the last 10 messages between you and the user:
+                                ${stringContext}
+
                                 User request:
                                 ${userMessage}
                                 `;
@@ -274,6 +295,9 @@ Output ONLY JSON. NEVER add notes.
 
                                                             data set:
                                                             ${productList}
+
+                                                            Also use the following array of messages as context to better understand the user request, this array contains the last 10 messages between you and the user:
+                                                            ${stringContext}
 
                                                             User question:
                                                             ${userMessage}
