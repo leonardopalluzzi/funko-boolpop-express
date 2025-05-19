@@ -235,7 +235,7 @@ function payment(req, res) {
                 })
             })
             .then(() => {
-                console.log('✅ DB aggiornato con successo');
+                console.log('DB aggiornato con successo');
                 res.status(200).send('ok');
 
 
@@ -295,12 +295,12 @@ function payment(req, res) {
                 //     })
             })
             .catch(err => {
-                console.error(`Errore durante la gestione del pagamento: ${err.message}`);
-                res.status(500).send('Errore interno server');
+                console.error(`Error during payment handling: ${err.message}`);
+                res.status(500).send('Server internal error');
             });
     } else {
         // Per tutti gli altri eventi
-        res.status(200).send('Evento ignorato');
+        res.status(200).send('Ignored event');
     }
 }
 
