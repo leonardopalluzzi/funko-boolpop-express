@@ -40,6 +40,19 @@ function store(req, res) {
             }
         }
     }).join('\n')
+
+    const userCart = req.body.userCart
+    const stringUserCart = userCart.map(item => {
+        return `Product name: ${item.name}; 
+                Product slug: ${item.slug}; Product 
+                price: ${item.price}; 
+                Product promotion name: ${item.promotion[0].name}; 
+                Product promotion discount: ${item.promotion[0].discount}; 
+                Product cart quantity: ${item.cartQuantity}; 
+                Product description: ${item.description}; 
+                Product license: ${item.license}; 
+                Product available quantity: ${item.quantity}`
+    }).join('\n')
     console.log(stringContext);
 
 
@@ -127,6 +140,9 @@ user request: 'the request made by the user'
 your response: 'the reposnse that you gave to the'
 ${stringContext}
 
+Use the following array to know the user actual cart, and which items the user is currently interested in:
+${stringUserCart}
+
 !IMPORTANT ALWAYS include all the required fields: slug, name, price, quantity.
 !IMPORTNAT ALWAYS report the slug field as you find it in the following array: ${productList}
 
@@ -178,6 +194,8 @@ Output ONLY JSON. NEVER add notes.
                                                             Use this  array as your data-set:
                                                             ${productList}
 
+                                                            Use the following array to know the user actual cart, and which items the user is currently interested in:
+                                                            ${stringUserCart}
 
                                                             Also use the following array of messages as context to better understand the user request. ALWAYS look at the context before answering so and try to understand if you need those infomration to better answer the user question, this array contains the last 10 messages between you and the user:
                                                             the strucutre of the context is:
@@ -252,6 +270,9 @@ Output ONLY JSON. NEVER add notes.
                                                             your response: 'the reposnse that you gave to the'
                                                             ${stringContext}
 
+                                                            Use the following array to know the user actual cart, and which items the user is currently interested in:
+                                                            ${stringUserCart}
+
                                 User request:
                                 ${userMessage}
                                 `;
@@ -314,6 +335,9 @@ Output ONLY JSON. NEVER add notes.
                                                             user request: 'the request made by the user'
                                                             your response: 'the reposnse that you gave to the'
                                                             ${stringContext}
+
+                                                            Use the following array to know the user actual cart, and which items the user is currently interested in:
+                                                            ${stringUserCart}
 
                                                             User question:
                                                             ${userMessage}
