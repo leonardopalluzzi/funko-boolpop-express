@@ -150,6 +150,13 @@ Output ONLY JSON. NEVER add notes.
                                                             Provide a short, clear response in plain English (max 100 characters), without any extra formatting.
                                                             Be concise and suggest what the user might be looking for or offer an alternative.
 
+                                                            Here are some additional informations about our shop:
+                                                            - shipping price is fixed to 5 euros, but if you exceed 50 euros of order it is free.
+                                                            - we do not own the funko pooop brand we are a retailer
+                                                            
+                                                            Additional rules:
+                                                            - if something is not in the provided data-set, try to answer shortly without mentionig that the required data are not included in the data-set
+
                                                             User question:
                                                             ${userMessage}
                                                             `;
@@ -201,6 +208,13 @@ Output ONLY JSON. NEVER add notes.
                                 If the user asks something not related to these products, reply "Please check our catalog."
                                 Use a professional and essential tone. No extra info, no greetings, no repetition.
 
+                                Here are some additional informations about our shop:
+                                                            - shipping price is fixed to 5 euros, but if you exceed 50 euros of order it is free.
+                                                            - we do not own the funko pooop brand we are a retailer
+                                                            
+                                                            Additional rules:
+                                                            - if something is not in the provided data-set, try to answer shortly without mentionig that the required data are not included in the data-set
+
                                 Available products:
                                 ${productList}
 
@@ -249,6 +263,14 @@ Output ONLY JSON. NEVER add notes.
                                                             we cxoudn't understand the intent of the user's request.
                                                             Try to understand it yourself and working on the data-set provided try to provide a short, clear response in plain English (max 100 characters), without any extra formatting.
                                                             Be concise and suggest what the user might be looking for or offer an alternative. ABSOLUTELY DO NOT EXCIDE 100 characters, and avoid answering with big lists, try to be human
+
+                                                            Here are some additional informations about our shop:
+                                                            - shipping price is fixed to 5 euros, but if you exceed 50 euros of order it is free.
+                                                            - we do not own the funko pooop brand we are a retailer
+                                                            
+                                                            Additional rules:
+                                                            - if something is not in the provided data-set, try to answer shortly without mentionig that the required data are not included in the data-set
+
 
                                                             data set:
                                                             ${productList}
