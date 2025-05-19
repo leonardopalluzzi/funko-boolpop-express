@@ -137,7 +137,7 @@ function store(req, res) {
                         orderInfo: JSON.stringify(orderInfoData),
                         transaction_id: transactionId,
                         email: useremail,
-                        usefirst_name: username,
+                        user_first_name: username,
                         amount: trueAmount,
                         shipping: amount > 50 ? 0 : 5
                     },
@@ -219,7 +219,7 @@ function payment(req, res) {
             })
             .then(() => {
                 console.log('DB aggiornato con successo');
-                res.status(200).send('ok');
+
 
 
 
@@ -239,7 +239,7 @@ function payment(req, res) {
                     subject: 'You purchase is confirmed',
                     templateId: 'd-185cf24d10d445ef961b4729ac77f8f0',
                     dynamicTemplateData: {
-                        first_name: paymentIntent.metadata.username,
+                        first_name: paymentIntent.metadata.user_first_name,
                         email: paymentIntent.metadata.email,
                         amount: paymentIntent.metadata.amount,
                         shipping: paymentIntent.metadata.shipping
@@ -257,11 +257,11 @@ function payment(req, res) {
                 const msgSeller = {
                     to: 'lp.palluzzi@gmail.com', // Change to your recipient
                     from: 'lp.palluzzi@gmail.com', // Change to your verified sender
-                    subject: `New purchase by ${paymentIntent.metadata.username}`,
+                    subject: `New purchase by ${paymentIntent.metadata.user_first_name}`,
                     templateId: 'd-22cafe66b217464f90a5c2c2a33594ce',
                     dynamicTemplateData: {
                         cart: htmlItems, //sezione di html
-                        first_name: paymentIntent.metadata.username, // non viene letto nell'email
+                        first_name: paymentIntent.metadata.user_first_name, // non viene letto nell'email
                         email: paymentIntent.metadata.email,
                         amount: Number(paymentIntent.metadata.amount).toFixed(2),
                         shipping: paymentIntent.metadata.shipping,
@@ -276,6 +276,9 @@ function payment(req, res) {
                     .catch((error) => {
                         console.error(error)
                     })
+
+
+                res.status(200).send('ok');
             })
             .catch(err => {
                 console.error(`Error during payment handling: ${err.message}`);
