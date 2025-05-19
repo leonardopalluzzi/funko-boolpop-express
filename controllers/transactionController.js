@@ -207,93 +207,100 @@ function payment(req, res) {
 
     if (event.type === 'payment_intent.succeeded') {
 
-        console.log('ciao chicco');
-
         const paymentIntent = event.data.object;
-        console.log('payment intent ciao:' + JSON.stringify(paymentIntent));
-
         const orderInfo = JSON.parse(paymentIntent.metadata.orderInfo);
-
-        console.log('orderinfo ciao:' + JSON.stringify(orderInfo));
-
-
         const pIds = orderInfo.map(item => item)
-
-        console.log('log di pids' + JSON.stringify(pIds));
 
 
         //aggiornare db
-        const updateDbSql = 'UPDATE transactions SET status = ? WHERE transactions.stripe_payment_id = ?'
+
         const updateQuantitySql = 'UPDATE products SET quantity = quantity - ? WHERE products.id = ? AND quantity >= ?'
-        pIds.forEach(item => {
-            console.log(item.product_quantity);
-
-            connection.query(updateQuantitySql, [item.product_quantity, item.product_id], (err, results) => {
-                if (err) return res.status(500).json({ state: 'error', message: err.message })
-
+        const updatePromise = pIds.map(item => {
+            return new Promise((resolve, reject) => {
+                connection.query(updateQuantitySql, [item.product_quantity, item.product_id, 0], (err, results) => {
+                    if (err) return res.status(500).json({ state: 'error', message: err.message })
+                    resolve(results)
+                })
             })
         })
 
-
-        connection.query(updateDbSql, ['succeeded', paymentIntent.id], (err, results) => {
-            if (err) return res.status(500).json({ state: 'error', message: err.message });
-
-            res.status(200).json(results)
-
-
-
-        })
-
-        const htmlItems = pIds.map(item => {
-            return `<p>ID Prodotto: ${item.product_id} Prodotto: ${item.name}, Quantità: ${item.product_quantity}, Prezzo: ${item.price}</p>`;
-        }).join('');
-
-        console.log(`questi e l'html per l'email:` + htmlItems);
-
-
-
-        const msg = { // non viene inviata l'email
-            to: paymentIntent.metadata.useremail, // Change to your recipient
-            from: 'lp.palluzzi@gmail.com', // Change to your verified sender
-            subject: 'You purchase is confirmed',
-            templateId: 'd-185cf24d10d445ef961b4729ac77f8f0',
-            dynamicTemplateData: {
-                first_name: paymentIntent.metadata.username,
-                email: paymentIntent.metadata.useremail,
-                amount: paymentIntent.metadata.amount,
-                shipping: paymentIntent.metadata.shipping
-            }
-        }
-        sgMail
-            .send(msg)
+        Promise.all(updatePromise)
             .then(() => {
-                console.log('Email sent')
+                return new Promise((resolve, reject) => {
+                    const updateDbSql = 'UPDATE transactions SET status = ? WHERE transactions.stripe_payment_id = ?'
+                    connection.query(updateDbSql, ['succeeded', paymentIntent.id], (err, results) => {
+                        if (err) return res.status(500).json({ state: 'error', message: err.message });
+                        resolve(results)
+                    })
+                })
             })
-            .catch((error) => {
-                console.error(error)
-            })
-
-        const msgSeller = {
-            to: 'lp.palluzzi@gmail.com', // Change to your recipient
-            from: 'lp.palluzzi@gmail.com', // Change to your verified sender
-            subject: `New purchase by ${paymentIntent.metadata.username}`,
-            templateId: 'd-22cafe66b217464f90a5c2c2a33594ce',
-            dynamicTemplateData: {
-                cart: htmlItems, //sezione di html
-                first_name: paymentIntent.metadata.username, // non viene letto nell'email
-                email: paymentIntent.metadata.useremail,
-                amount: paymentIntent.metadata.amount,
-                shipping: paymentIntent.metadata.shipping
-            }
-        }
-        sgMail
-            .send(msgSeller)
             .then(() => {
-                console.log('Email sent')
+                console.log('✅ DB aggiornato con successo');
+                res.status(200).send('ok');
+
+
+
+
+                const htmlItems = pIds.map(item => {
+                    return `<p>ID Prodotto: ${item.product_id} Prodotto: ${item.name}, Quantità: ${item.product_quantity}, Prezzo: ${item.price}</p>`;
+                }).join('');
+
+                console.log(`questi e l'html per l'email:` + htmlItems);
+                console.log(`questi sono i dati dell'email:` + paymentIntent.metadata.useremail);
+
+
+
+                // const msg = { // non viene inviata l'email
+                //     to: paymentIntent.metadata.useremail, // Change to your recipient
+                //     from: 'lp.palluzzi@gmail.com', // Change to your verified sender
+                //     subject: 'You purchase is confirmed',
+                //     templateId: 'd-185cf24d10d445ef961b4729ac77f8f0',
+                //     dynamicTemplateData: {
+                //         first_name: paymentIntent.metadata.username,
+                //         email: paymentIntent.metadata.useremail,
+                //         amount: paymentIntent.metadata.amount,
+                //         shipping: paymentIntent.metadata.shipping
+                //     }
+                // }
+                // sgMail
+                //     .send(msg)
+                //     .then(() => {
+                //         console.log('Email sent')
+                //     })
+                //     .catch((error) => {
+                //         console.error(error)
+                //     })
+
+                // const msgSeller = {
+                //     to: 'lp.palluzzi@gmail.com', // Change to your recipient
+                //     from: 'lp.palluzzi@gmail.com', // Change to your verified sender
+                //     subject: `New purchase by ${paymentIntent.metadata.username}`,
+                //     templateId: 'd-22cafe66b217464f90a5c2c2a33594ce',
+                //     dynamicTemplateData: {
+                //         cart: htmlItems, //sezione di html
+                //         first_name: paymentIntent.metadata.username, // non viene letto nell'email
+                //         email: paymentIntent.metadata.useremail,
+                //         amount: Number(paymentIntent.metadata.amount).toFixed(2),
+                //         shipping: paymentIntent.metadata.shipping,
+                //         total: `${Number((paymentIntent.metadata.amount + paymentIntent.metadata.shipping)).toFixed(2)}€`
+                //     }
+                // }
+                // sgMail
+                //     .send(msgSeller)
+                //     .then(() => {
+                //         console.log('Email sent')
+                //     })
+                //     .catch((error) => {
+                //         console.error(error)
+                //     })
             })
-            .catch((error) => {
-                console.error(error)
-            })
+            .catch(err => {
+                console.error(`Errore durante la gestione del pagamento: ${err.message}`);
+                res.status(500).send('Errore interno server');
+            });
+    } else {
+        // Per tutti gli altri eventi
+        res.status(200).send('Evento ignorato');
     }
 }
 
