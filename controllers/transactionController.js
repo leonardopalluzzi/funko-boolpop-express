@@ -74,23 +74,6 @@ function store(req, res) {
     const recoverProdIdSql = 'SELECT products.id AS pId, products.name AS name, products.price AS price FROM products WHERE products.slug = ?'
     const updatePivotSql = 'INSERT INTO product_transaction (product_id, transaction_id, quantity) VALUES (?, ?, ?)'
 
-
-
-    /* const selectQuantitySql = `SELECT quantity FROM products WHERE id = ?`
-
-    const checkQuantities = cart.map(item => {
-        return new Promise((resolve, reject) => {
-            connection.query(selectQuantitySql, [item.product_id], (err, results) => {
-                if (err) return reject(err);
-                if (!results.length || results[0].quantity < item.cartQuantity) {
-                    return reject(new Error(`Prodotto non disponibile in quantitá richiesta`))
-                }
-                resolve()
-            })
-        })
-    })
-    Promise.all(checkQuantities) */
-
     connection.query(saveIntentSql, values, (err, results) => {
         if (err) return res.status(500).json({ state: 'error', message: err.message });
         const transactionId = results.insertId
@@ -246,53 +229,53 @@ function payment(req, res) {
                 }).join('');
 
                 console.log(`questi e l'html per l'email:` + htmlItems);
-                console.log(`questi sono i dati dell'email:` + paymentIntent.metadata.useremail);
+                console.log(`questi sono i dati dell'email:` + paymentIntent.metadata.email);
 
 
 
-                // const msg = { // non viene inviata l'email
-                //     to: paymentIntent.metadata.useremail, // Change to your recipient
-                //     from: 'lp.palluzzi@gmail.com', // Change to your verified sender
-                //     subject: 'You purchase is confirmed',
-                //     templateId: 'd-185cf24d10d445ef961b4729ac77f8f0',
-                //     dynamicTemplateData: {
-                //         first_name: paymentIntent.metadata.username,
-                //         email: paymentIntent.metadata.useremail,
-                //         amount: paymentIntent.metadata.amount,
-                //         shipping: paymentIntent.metadata.shipping
-                //     }
-                // }
-                // sgMail
-                //     .send(msg)
-                //     .then(() => {
-                //         console.log('Email sent')
-                //     })
-                //     .catch((error) => {
-                //         console.error(error)
-                //     })
+                const msg = { // non viene inviata l'email
+                    to: paymentIntent.metadata.email, // Change to your recipient
+                    from: 'lp.palluzzi@gmail.com', // Change to your verified sender
+                    subject: 'You purchase is confirmed',
+                    templateId: 'd-185cf24d10d445ef961b4729ac77f8f0',
+                    dynamicTemplateData: {
+                        first_name: paymentIntent.metadata.username,
+                        email: paymentIntent.metadata.email,
+                        amount: paymentIntent.metadata.amount,
+                        shipping: paymentIntent.metadata.shipping
+                    }
+                }
+                sgMail
+                    .send(msg)
+                    .then(() => {
+                        console.log('Email sent')
+                    })
+                    .catch((error) => {
+                        console.error(error)
+                    })
 
-                // const msgSeller = {
-                //     to: 'lp.palluzzi@gmail.com', // Change to your recipient
-                //     from: 'lp.palluzzi@gmail.com', // Change to your verified sender
-                //     subject: `New purchase by ${paymentIntent.metadata.username}`,
-                //     templateId: 'd-22cafe66b217464f90a5c2c2a33594ce',
-                //     dynamicTemplateData: {
-                //         cart: htmlItems, //sezione di html
-                //         first_name: paymentIntent.metadata.username, // non viene letto nell'email
-                //         email: paymentIntent.metadata.useremail,
-                //         amount: Number(paymentIntent.metadata.amount).toFixed(2),
-                //         shipping: paymentIntent.metadata.shipping,
-                //         total: `${Number((paymentIntent.metadata.amount + paymentIntent.metadata.shipping)).toFixed(2)}€`
-                //     }
-                // }
-                // sgMail
-                //     .send(msgSeller)
-                //     .then(() => {
-                //         console.log('Email sent')
-                //     })
-                //     .catch((error) => {
-                //         console.error(error)
-                //     })
+                const msgSeller = {
+                    to: 'lp.palluzzi@gmail.com', // Change to your recipient
+                    from: 'lp.palluzzi@gmail.com', // Change to your verified sender
+                    subject: `New purchase by ${paymentIntent.metadata.username}`,
+                    templateId: 'd-22cafe66b217464f90a5c2c2a33594ce',
+                    dynamicTemplateData: {
+                        cart: htmlItems, //sezione di html
+                        first_name: paymentIntent.metadata.username, // non viene letto nell'email
+                        email: paymentIntent.metadata.email,
+                        amount: Number(paymentIntent.metadata.amount).toFixed(2),
+                        shipping: paymentIntent.metadata.shipping,
+                        total: `${Number((paymentIntent.metadata.amount + paymentIntent.metadata.shipping)).toFixed(2)}€`
+                    }
+                }
+                sgMail
+                    .send(msgSeller)
+                    .then(() => {
+                        console.log('Email sent')
+                    })
+                    .catch((error) => {
+                        console.error(error)
+                    })
             })
             .catch(err => {
                 console.error(`Error during payment handling: ${err.message}`);
