@@ -121,10 +121,10 @@ Expected JSON format:
   }
 ]
 
-Also use the following array of messages as context to better understand the user request, this array contains the last 10 messages between you and the user:
+Also use the following array of messages as context to better understand the user request. ALWAYS look at the context before answering so and try to understand if you need those infomration to better answer the user question, this array contains the last 10 messages between you and the user:
 the strucutre of the context is:
 user request: 'the request made by the user'
-your response: 'the reposnse that you gave to the user'
+your response: 'the reposnse that you gave to the'
 ${stringContext}
 
 !IMPORTANT ALWAYS include all the required fields: slug, name, price, quantity.
@@ -175,7 +175,14 @@ Output ONLY JSON. NEVER add notes.
                                                             Additional rules:
                                                             - if something is not in the provided data-set, try to answer shortly without mentionig that the required data are not included in the data-set
 
-                                                            Also use the following array of messages as context to better understand the user request, this array contains the last 10 messages between you and the user:
+                                                            Use this  array as your data-set:
+                                                            ${productList}
+
+
+                                                            Also use the following array of messages as context to better understand the user request. ALWAYS look at the context before answering so and try to understand if you need those infomration to better answer the user question, this array contains the last 10 messages between you and the user:
+                                                            the strucutre of the context is:
+                                                            user request: 'the request made by the user'
+                                                            your response: 'the reposnse that you gave to the'
                                                             ${stringContext}
 
                                                             User question:
@@ -239,8 +246,11 @@ Output ONLY JSON. NEVER add notes.
                                 Available products:
                                 ${productList}
 
-                                Also use the following array of messages as context to better understand the user request, this array contains the last 10 messages between you and the user:
-                                ${stringContext}
+                                Also use the following array of messages as context to better understand the user request. ALWAYS look at the context before answering so and try to understand if you need those infomration to better answer the user question, this array contains the last 10 messages between you and the user:
+                                                            the strucutre of the context is:
+                                                            user request: 'the request made by the user'
+                                                            your response: 'the reposnse that you gave to the'
+                                                            ${stringContext}
 
                                 User request:
                                 ${userMessage}
@@ -299,7 +309,10 @@ Output ONLY JSON. NEVER add notes.
                                                             data set:
                                                             ${productList}
 
-                                                            Also use the following array of messages as context to better understand the user request, this array contains the last 10 messages between you and the user:
+                                                            Also use the following array of messages as context to better understand the user request. ALWAYS look at the context before answering so and try to understand if you need those infomration to better answer the user question, this array contains the last 10 messages between you and the user:
+                                                            the strucutre of the context is:
+                                                            user request: 'the request made by the user'
+                                                            your response: 'the reposnse that you gave to the'
                                                             ${stringContext}
 
                                                             User question:
