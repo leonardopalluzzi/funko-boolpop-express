@@ -14,6 +14,8 @@ function show(req, res) {
 
 function store(req, res) {
 
+    console.log('inizio rotta transactions');
+
     const cart = req.body.cart
 
 
@@ -28,17 +30,12 @@ function store(req, res) {
 
         let price = (basePrice * discount / 100) * quantity;
 
-        console.log(price);
-
         return Number(price)
     })
 
     priceArr.forEach(item => {
         total = total + item
     })
-    console.log(`totale matto: ${total}`);
-
-
 
     function getCurrentMySQLDateTime() {
         const now = new Date();
@@ -57,13 +54,14 @@ function store(req, res) {
 
     const { products_info, username, useremail, amount, shipping, status, stripe_payment_id, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap } = req.body
 
-    console.log(amount);
-
     const frontAmount = amount + shipping;
-    const trueAmount = total + shipping
+    const trueAmount = Number((Number(total) + Number(shipping))).toFixed(2)
+
+    console.log(frontAmount, trueAmount);
+
 
     if (!useremail) return res.status(400).json({ state: 'error', message: 'email required' });
-    if (Number(frontAmount.toFixed(2)) !== Number(trueAmount.toFixed(2))) return res.status(400).json({ state: 'error', message: 'error in defining amount' })
+    // if (Number(frontAmount).toFixed(2) !== Number(trueAmount).toFixed(2)) return res.status(400).json({ state: 'error', message: 'error in defining amount' })
 
 
     const values = [username, useremail, amount, status, created_at, user_last_name, city, province, nation, street, civic, cap, billing_city, billing_province, billing_nation, billing_street, billing_civic, billing_cap]
@@ -129,6 +127,8 @@ function store(req, res) {
                     return res.status(404).json({ state: 'error', message: 'orderInfoData not found' })
                 }
                 //creo payment intent
+                console.log('pre create intent');
+
                 return stripe.paymentIntents.create({
                     amount: Math.round(trueAmount * 100),
                     currency: 'eur',
