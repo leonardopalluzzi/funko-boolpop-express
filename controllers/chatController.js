@@ -42,6 +42,8 @@ function store(req, res) {
     }).join('\n')
 
     const userCart = req.body.userCart
+    console.log(userCart);
+
     let stringUserCart = userCart.map(item => {
         return `Product name: ${item.name}; 
                 Product slug: ${item.slug}; Product 
