@@ -16,11 +16,16 @@ function index(req, res) {
     const minPrice = Number(req.query.minPrice);
     const maxPrice = Number(req.query.maxPrice);
     const promotion = req.query.promotion || '';
+    const license = req.query.license || '';
+
+    console.log(license);
+
 
     const filters = [];
     const values = [];
 
     // Validazioni
+    if (typeof license !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid license parameter' });
     if (typeof name !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid name parameter' });
     if (typeof description !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid description parameter' });
     if (typeof category !== 'string') return res.status(400).json({ state: 'error', message: 'Invalid category parameter' });
@@ -91,68 +96,13 @@ function index(req, res) {
         values.push(`%${promotion}%`)
     }
 
+    if (license) {
+        filters.push('p.licenses_id = ?')
+        values.push(`${Number(license)}`)
+    }
+
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
-    /*     let priceOrderClause = ''
-    
-        if (sortBySales) {
-            priceOrderClause =
-                sortBySales === 1
-                    ? 'ORDER BY total_quantity_sold DESC'
-                    : sortBySales === - 1
-                        ? 'ORDER BY total_quantity_sold ASC'
-                        : (minPrice || maxPrice)
-                            ? 'ORDER BY p.price ASC'
-                            : sortByPrice === 1
-                                ? 'ORDER BY p.price ASC'
-                                : sortByPrice === -1
-                                    ? 'ORDER BY p.price DESC'
-                                    : '';
-        } else {
-            priceOrderClause =
-                (minPrice !== 0 || maxPrice !== 1000)
-                    ? 'ORDER BY p.price'
-                    : sortByPrice === 1
-                        ? 'ORDER BY p.price'
-                        : sortByPrice === -1
-                            ? 'ORDER BY p.price'
-                            : '';
-        }
-    
-    
-        let dateOrderClause = ''
-    
-        if (priceOrderClause !== '') {
-            dateOrderClause = dateSort === 1
-                ? ', p.created_at DESC'
-                : dateSort === -1
-                    ? ', p.created_at ASC'
-                    : '';
-        } else {
-            dateOrderClause = dateSort === 1
-                ? 'ORDER BY p.created_at DESC'
-                : dateSort === -1
-                    ? 'ORDER BY p.created_at ASC'
-                    : '';
-        }
-    
-        let nameOrderClause = '';
-    
-        if (priceOrderClause.startsWith('ORDER BY') || dateOrderClause.startsWith('ORDER BY')) {
-            // Se c'è già un ORDER BY, aggiungi la virgola
-            if (sortByName === 'asc') {
-                nameOrderClause = ', p.name ASC';
-            } else if (sortByName === 'desc') {
-                nameOrderClause = ',  p.name DESC';
-            }
-        } else {
-            // Se non c'è ancora un ORDER BY
-            if (sortByName === 'asc') {
-                nameOrderClause = 'ORDER BY p.name ASC';
-            } else if (sortByName === 'desc') {
-                nameOrderClause = 'ORDER BY p.name DESC';
-            }
-        } */
 
     let orderBy = [];
 
@@ -184,6 +134,7 @@ function index(req, res) {
                     LEFT JOIN product_attribute pa ON pa.products_id = p.id
                     LEFT JOIN attributes a ON pa.attributes_id = a.id
                     LEFT JOIN promotions ON p.promotions_id = promotions.id
+                    LEFT JOIN licenses ON p.licenses_id = licenses.id
                     ${whereClause}
                     GROUP BY p.id
                 ) AS filtered;
@@ -203,13 +154,18 @@ function index(req, res) {
         LEFT JOIN product_attribute pa ON pa.products_id = p.id
         LEFT JOIN attributes a ON pa.attributes_id = a.id
         LEFT JOIN promotions ON p.promotions_id = promotions.id
+        LEFT JOIN licenses ON p.licenses_id = licenses.id
         ${whereClause}
         GROUP BY p.id
         ${orderClause}
         LIMIT ? OFFSET ?
     `;
+    console.log(productSql);
+
+
 
     values.push(limit, offset);
+    console.log(values);
     const imagesSql = 'SELECT * FROM images WHERE images.product_id = ?'
     const promotionSql = 'SELECT * FROM promotions WHERE promotions.id = ?'
     const licenseSql = 'SELECT * FROM licenses WHERE licenses.id = ?'
@@ -281,7 +237,7 @@ function index(req, res) {
             Promise.all(productListToSend)
                 .then(productListToSend => {
                     const searchOnly = req.query.searchOnly === 'true';
-                    const hasFilters = name || description || category || attribute || minPrice || maxPrice || promotion || sortByPrice || sortBySales || dateSort || sortByName;
+                    const hasFilters = name || description || category || attribute || minPrice || maxPrice || promotion || sortByPrice || sortBySales || dateSort || sortByName || license;
 
                     if (searchOnly && !hasFilters) {
                         return res.json({
@@ -295,6 +251,7 @@ function index(req, res) {
                     const getCategory = req.query.getCategory === 'true';
                     const getPromo = req.query.getPromo === 'true';
                     const getAttribute = req.query.getAttribute === 'true'
+                    const getLicense = req.query.getLicense === 'true';
 
                     if (getCategory) {
 
@@ -342,6 +299,16 @@ function index(req, res) {
                         });
 
                         return;
+                    }
+
+                    if (getLicense) {
+                        const getLicenseSql = 'SELECT * FROM licenses'
+
+                        connection.query(getLicenseSql, (err, results) => {
+                            if (err) return res.status(500).json({ state: 'error', message: err.message });
+                            res.json({ results })
+                        })
+                        return
                     }
 
                     res.json({
