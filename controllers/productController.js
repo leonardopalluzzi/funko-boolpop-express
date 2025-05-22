@@ -219,7 +219,7 @@ function index(req, res) {
                                             promotions: promotions,
                                             license: licenses[0],
                                             category: categories,
-                                            attribute: attributes,
+                                            attributes: attributes,
                                             discounted_price: product.discounted_price
                                         }
                                         resolve(itemToSend)
@@ -376,7 +376,7 @@ function show(req, res) {
 
                     connection.query(promotionSql, [product[0].promotions_id], (err, promotion) => {
                         if (err) return res.status(500).json({ state: 'error', message: err.message });
-                        productToSend.promotion = promotion
+                        productToSend.promotions = promotion
 
                         connection.query(attributeSql, [pId], (err, attributes) => {
                             if (err) return res.status(500).json({ state: 'error', message: err.message });
