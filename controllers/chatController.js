@@ -48,8 +48,8 @@ function store(req, res) {
         return `Product name: ${item.name}; 
                 Product slug: ${item.slug}; Product 
                 price: ${item.price}; 
-                Product promotion name: ${item.promotion[0].name}; 
-                Product promotion discount: ${item.promotion[0].discount}; 
+                Product promotion name: ${item.promotions[0].name}; 
+                Product promotion discount: ${item.promotions[0].discount}; 
                 Product cart quantity: ${item.cartQuantity}; 
                 Product description: ${item.description}; 
                 Product license: ${item.license}; 
